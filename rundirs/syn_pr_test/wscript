@@ -1,0 +1,75 @@
+
+top = '../../'
+
+def options(opt):
+    pass
+
+def configure(conf):
+    conf.env['PROJECT_ROOT'] = top
+    conf.load('brick_general')
+
+    conf.load('synopsys_dcshell')
+
+def generate_libs(bld):
+    #
+    # Generate timing macro for SRAM_top
+    #
+    bld (
+        name = 'cap_mem_top_gendb',
+        rule = 'dc_shell-t -x "enable_write_lib_mode; read_lib ${SRC};write_lib -output ${TGT} capacitive_memory_top_wc;exit" > logfiles/cap_mem_top.genDB.log 2>&1',
+        source =  bld.path.find_node(top+'/hicann-dls/units/capacitive_memory/abstract/capacitive_memory_top.lib'),
+        target =  bld.bldnode.make_node(bld.env['BRICK_RESULTS']+'/capacitive_memory_top.db'),
+    )
+
+    bld (
+        name = 'synapse_block_gendb',
+        rule = 'dc_shell-t -x "enable_write_lib_mode; read_lib ${SRC};write_lib -output ${TGT} synapse_block_top_wc;exit" > logfiles/synapse_block.genDB.log 2>&1',
+        source =  bld.path.find_node(top+'/hicann-dls/units/synapse/abstract/synapse_block_top.lib'),
+        target =  bld.bldnode.make_node(bld.env['BRICK_RESULTS']+'/synapse_synapse_block_top.db'),
+    )
+
+    bld (
+        name = 'denmem_block_gendb',
+        rule = 'dc_shell-t -x "enable_write_lib_mode; read_lib ${SRC};write_lib -output ${TGT} denmem_block_tc;exit" > logfiles/denmem_block.genDB.log 2>&1',
+        source =  bld.path.find_node(top+'/hicann-dls/units/neuron/abstract/denmem_block.lib'),
+        target =  bld.bldnode.make_node(bld.env['BRICK_RESULTS']+'/denmem_block.db'),
+    )
+
+    bld (
+        name = 'cadc_gendb',
+        rule = 'dc_shell-t -x "enable_write_lib_mode; read_lib ${SRC};write_lib -output ${TGT} cadc_macro_tc;exit" > logfiles/cadc_macro.genDB.log 2>&1',
+        source =  bld.path.find_node(top+'/hicann-dls/units/cadc/abstract/8_bit_adc.lib'),
+        target =  bld.bldnode.make_node(bld.env['BRICK_RESULTS']+'/8_bit_adc.db'),
+    )
+
+    #for esd in ['esd_PDB1AC_lr','esd_PDB1A_lr', 'esd_PDB1A_hr', 'esd_PDB3AC_lr', 'esd_PDB3A_lr', 'esd_PDB3A_hr']:
+    #    bld (
+    #        name = esd+'_gendb',
+    #        rule = 'dc_shell-t -x "read_lib ${SRC};write_lib -output ${TGT} '+esd+'_wc;exit" > logfiles/'+esd+'.genDB.log 2>&1',
+    #        source =  bld.path.find_node(top+'/units/generic_elements/abstract/'+esd+'.lib'),
+    #        target =  bld.bldnode.make_node(bld.env['BRICK_RESULTS']+'/generic_elements_'+esd+'.db'),
+    #    )
+
+
+
+def build(bld):
+    bld.load('brick_general')
+
+    syn = bld (
+        name = 'synth_hicdinn',
+        design_name = 'synapse',
+        features = 'synopsys_dcshell',
+        source = [
+            top + '/source/hdl/rtl/fp_package.sv',
+            top + '/source/hdl/rtl/config_if.sv',
+            top + '/source/hdl/rtl/synapse_dendrite_if.sv',
+            top + '/source/hdl/rtl/synapse.sv'
+        ],
+        tcl_script = top+'/rtl2gds/dc_shell/top.tcl',
+        #verilog_search_paths = [ top + '/hicann-dls/units/top/source/hdl/include' ] + bld.env.S2PP_VERILOG_INCLUDE,
+    )
+
+    bld.env.MINIASIC_0_SYN_NETLIST = syn.get_synthesized_netlist_node()
+    bld.env.MINIASIC_0_SYN_CONSTRAINTS = syn.get_synthesized_constraints_node()
+
+# vim: expandtab ts=4 sw=4
