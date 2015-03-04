@@ -3,7 +3,7 @@ set_operating_conditions -max WCCOM -max_lib tcbn65lpwc -min BCCOM -min_lib tcbn
 # Main 100 MHz clock
 create_clock -period 10.0 -waveform { 0 5.0 } [get_ports clk] -name CLK
 
-set_input_delay 0.0 -clock [get_clocks CLK] [get_ports dendrite.vmem]
+#set_input_delay 0.0 -clock [get_clocks CLK] [get_ports dendrite.vmem]
 
 ### NOT USED ####
 

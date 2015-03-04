@@ -57,13 +57,16 @@ def build(bld):
 
     syn = bld (
         name = 'synth_hicdinn',
-        design_name = 'synapse',
+        design_name = 'nn',
         features = 'synopsys_dcshell',
         source = [
             top + '/source/hdl/rtl/fp_package.sv',
             top + '/source/hdl/rtl/config_if.sv',
             top + '/source/hdl/rtl/synapse_dendrite_if.sv',
-            top + '/source/hdl/rtl/synapse.sv'
+            top + '/source/hdl/rtl/dendrite_neuron_if.sv',
+            top + '/source/hdl/rtl/neuron.sv',
+            top + '/source/hdl/rtl/synapse.sv',
+            top + '/source/hdl/rtl/nn.sv'
         ],
         tcl_script = top+'/rtl2gds/dc_shell/top.tcl',
         #verilog_search_paths = [ top + '/hicann-dls/units/top/source/hdl/include' ] + bld.env.S2PP_VERILOG_INCLUDE,

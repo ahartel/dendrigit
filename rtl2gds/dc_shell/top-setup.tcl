@@ -3,7 +3,7 @@ set BRICK_RESULTS				[getenv "BRICK_RESULTS"];
 set TSMC_DIR                    [getenv "TSMC_DIR"];
 set PROJECT_ROOT                [getenv "PROJECT_ROOT"];
 
-set DESIGN_NAME                 "synapse";      # The name of the top-level design.
+set DESIGN_NAME                 "nn";      # The name of the top-level design.
 
 #############################################################
 # The following variables will be set automatically during
