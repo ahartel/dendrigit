@@ -11,19 +11,27 @@ module neuron
 	// spike_in_interface
 	dendrite_neuron_if.neuron dendrite,
 	// write_interface
-	//config_if.slave cfg_if,
+	config_if.slave cfg_in,
+	config_if.master cfg_out,
 	// spike_out_interface
 	output logic output_spike
 );
 
 logic taumem_counter_wrap, tauref_counter_wrap;
 logic [COUNTER_WIDTH-1:0] taumem_counter, tauref_counter;
+fp::fpType tau_mem;
 logic [MEMBRANE_WIDTH-1:0] membrane;
 // have to be stored in local memory later
 localparam taumem_scale = 8'h10;
 localparam tauref_scale = 8'h10;
 localparam v_threshold = 16'h1000;
 localparam v_reset = 16'h0000;
+
+assign cfg_out.data_clk = cfg_in.data_clk;
+always_ff @(posedge cfg_in.data_clk) begin
+	tau_mem <= cfg_in.data_in;
+	cfg_out.data_in <= tau_mem;
+end
 
 // taumem_counter
 always_ff @(posedge clk) begin

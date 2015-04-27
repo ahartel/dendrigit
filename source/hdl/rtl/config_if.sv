@@ -1,6 +1,6 @@
 
 interface config_if();
-	parameter DATA_WIDTH = 32;
+	parameter DATA_WIDTH = fp::WORD_LENGTH;
 	logic [DATA_WIDTH-1:0] data_in, data_out;
 	logic data_clk;
 

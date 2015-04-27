@@ -1,0 +1,103 @@
+`include "params.sv"
+`include "spikes.sv"
+
+module first_test();
+
+localparam NUM_SYNAPSE_ROWS = 2;
+localparam NUM_COLS = 2;
+localparam WEIGHT_WIDTH = 6;
+
+localparam time fast_period = 2ns;
+localparam time slow_period = 2ns;
+logic fast_clk, slow_clk;
+logic reset;
+system_if sys_if(fast_clk,slow_clk,reset);
+
+spike_in_if spike_in[NUM_SYNAPSE_ROWS]();
+//logic [WEIGHT_WIDTH-1:0] neuron_current [NUM_SYNAPSE_ROWS-1:0];
+
+config_if cfg_in[NUM_SYNAPSE_ROWS+1](),cfg_out[NUM_SYNAPSE_ROWS+1]();
+
+neuron_params   #(.NUM_COLS(NUM_COLS)) neuron_config = new();
+dendrite_params #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) dendrite_config = new();
+synapse_params  #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) synapse_config = new();
+config_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) cfg_trans = new(cfg_in);
+spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,sys_if);
+
+initial begin
+	spike_trans.append_spike(50,1);
+	spike_trans.append_spike(100,2);
+	spike_trans.append_spike(150,3);
+end
+
+initial begin
+	neuron_config.set(0,0,1);
+	neuron_config.set(1,0,2);
+	// first row, first column
+	synapse_config.set(0,0,0,1);
+	synapse_config.set(0,0,1,2);
+	synapse_config.set(0,0,2,3);
+	synapse_config.set(0,1,0,4);
+	synapse_config.set(0,1,1,5);
+	synapse_config.set(0,1,2,6);
+	// first row, second column
+	synapse_config.set(0,2,0,7);
+	synapse_config.set(0,2,1,8);
+	synapse_config.set(0,2,2,9);
+	synapse_config.set(0,3,0,10);
+	synapse_config.set(0,3,1,11);
+	synapse_config.set(0,3,2,12);
+	// second row, first column
+	synapse_config.set(1,0,0,16);
+	synapse_config.set(1,0,1,17);
+	synapse_config.set(1,0,2,18);
+	synapse_config.set(1,1,0,19);
+	synapse_config.set(1,1,1,20);
+	synapse_config.set(1,1,2,21);
+	// second row, first column
+	synapse_config.set(1,2,0,22);
+	synapse_config.set(1,2,1,23);
+	synapse_config.set(1,2,2,24);
+	synapse_config.set(1,3,0,25);
+	synapse_config.set(1,3,1,26);
+	synapse_config.set(1,3,2,27);
+end
+
+initial begin
+	reset = 1'b1;
+	#4ns;
+	reset = 1'b0;
+	#2ns;
+	cfg_trans.write_neuron_config(neuron_config);
+	cfg_trans.write_synapse_dendrite_config(dendrite_config,synapse_config);
+	spike_trans.send_spikes();
+	#10ns;
+	$finish();
+end
+
+always begin
+	slow_clk = 1'b0;
+	#(slow_period/2.0);
+	slow_clk = 1'b1;
+	#(slow_period/2.0);
+end
+
+always begin
+	fast_clk = 1'b0;
+	#(fast_period/2.0);
+	fast_clk = 1'b1;
+	#(fast_period/2.0);
+end
+
+
+
+nn #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS))
+nn_i(
+	.clk(fast_clk),
+	.reset,
+	.input_spike(spike_in),
+	.cfg_in,
+	.cfg_out
+);
+
+endmodule

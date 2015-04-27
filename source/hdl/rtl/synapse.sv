@@ -18,6 +18,7 @@ module synapse
 );
 
 	fp::fpType El, gl, decay_gl, tau_gl, gl_jump, sub_result;
+	fp::fpType dummy;
 	fp::fpWideType end_result;
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
@@ -28,7 +29,7 @@ module synapse
 		cfg_out.data_in <= tau_gl;
 	end
 
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gl (.A(gl),.B(tau_gl),.PRODUCT({16'h0,decay_gl}),.TC(1'b0));
+	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gl (.A(gl),.B(tau_gl),.PRODUCT({dummy,decay_gl}),.TC(1'b0));
 
 	// gl
 	always_ff @(posedge clk) begin
