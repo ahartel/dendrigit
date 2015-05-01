@@ -4,7 +4,7 @@ module nn #(
 	parameter integer NUM_COLS=1
 )
 (
-	input logic clk, reset,
+	system_if.nn sys_if,
 	spike_in_if.slave input_spike[NUM_SYNAPSE_ROWS],
 	config_if.slave cfg_in[NUM_SYNAPSE_ROWS+1],
 	config_if.master cfg_out[NUM_SYNAPSE_ROWS+1],
@@ -25,14 +25,14 @@ module nn #(
 				synapse_dendrite_if synapse_if[2]();
 
 				synapse synapse_0 (
-					.clk, .reset,
+					.clk(sys_if.main_clk), .reset(sys_if.reset),
 					.input_spike(input_spike[i].valid),
 					.dendrite(synapse_if[0]),
 					.cfg_in(cfg_syn[3*j]),
 					.cfg_out(cfg_syn[3*j+1])
 				);
 				synapse synapse_1 (
-					.clk, .reset,
+					.clk(sys_if.main_clk), .reset(sys_if.reset),
 					.input_spike(input_spike[i].valid),
 					.dendrite(synapse_if[1]),
 					.cfg_in(cfg_syn[3*j+2]),
@@ -40,9 +40,9 @@ module nn #(
 				);
 
 
-				if (i==NUM_SYNAPSE_ROWS-1) begin
+				if (i==NUM_SYNAPSE_ROWS-1) begin : dendrite_last_row
 					dendrite dendrite_i (
-						.clk, .reset,
+						.clk(sys_if.main_clk), .reset(sys_if.reset),
 						.synapse0(synapse_if[0]),
 						.synapse1(synapse_if[1]),
 						.neuron(dendr_nrn_if[j]),
@@ -51,9 +51,9 @@ module nn #(
 						.cfg_out(cfg_syn[3*j+2])
 					);
 				end
-				else begin
+				else begin : dendrite
 					dendrite dendrite_i (
-						.clk, .reset,
+						.clk(sys_if.main_clk), .reset(sys_if.reset),
 						.synapse0(synapse_if[0]),
 						.synapse1(synapse_if[1]),
 						.neuron(dendr_nrn_if[j]),
@@ -72,7 +72,7 @@ module nn #(
 	generate
 		for (genvar j=0; j<NUM_COLS; j=j+1) begin : neuron_cols
 			neuron neuron_j (
-				.clk, .reset,
+				.clk(sys_if.main_clk), .reset(sys_if.reset),
 				.dendrite(dendr_nrn_if[j]),
 				.output_spike(output_spike[j]),
 				.cfg_in(cfg_nrn[j]),

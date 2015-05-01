@@ -92,6 +92,7 @@ def build(bld):
 				top +'/source/hdl/rtl/system_if.sv',
 				top +'/source/hdl/rtl/config_if.sv',
 				top +'/source/hdl/rtl/spike_in_if.sv',
+				top +'/source/hdl/tb/tb_clk_if.sv',
 				top +'/source/hdl/rtl/dendrite_neuron_if.sv',
 				top +'/source/hdl/rtl/synapse_dendrite_if.sv',
 				top +'/source/hdl/rtl/fp_package.sv',

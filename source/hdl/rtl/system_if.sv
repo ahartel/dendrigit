@@ -1,4 +1,6 @@
 
-interface system_if (input logic fast_clk, slow_clk, reset);
+interface system_if (input logic main_clk, config_clk, reset);
+
+	modport nn (input main_clk, config_clk, reset);
 
 endinterface

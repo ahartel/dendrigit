@@ -7,11 +7,15 @@ localparam NUM_SYNAPSE_ROWS = 2;
 localparam NUM_COLS = 2;
 localparam WEIGHT_WIDTH = 6;
 
-localparam time fast_period = 2ns;
-localparam time slow_period = 2ns;
-logic fast_clk, slow_clk;
-logic reset;
-system_if sys_if(fast_clk,slow_clk,reset);
+localparam time fast_period = 1us;
+localparam time slow_period = 10us;
+logic fast_clk, slow_clk, reset;
+logic main_clk;
+system_if sys_if(main_clk,slow_clk,reset);
+
+tb_clk_if tb_clk(fast_clk,slow_clk,reset);
+
+assign main_clk = tb_clk.start_fast_clock ? fast_clk : 1'b0;
 
 spike_in_if spike_in[NUM_SYNAPSE_ROWS]();
 //logic [WEIGHT_WIDTH-1:0] neuron_current [NUM_SYNAPSE_ROWS-1:0];
@@ -22,7 +26,7 @@ neuron_params   #(.NUM_COLS(NUM_COLS)) neuron_config = new();
 dendrite_params #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) dendrite_config = new();
 synapse_params  #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) synapse_config = new();
 config_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) cfg_trans = new(cfg_in);
-spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,sys_if);
+spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,tb_clk);
 
 initial begin
 	spike_trans.append_spike(50,1);
@@ -65,13 +69,17 @@ end
 
 initial begin
 	reset = 1'b1;
-	#4ns;
+	tb_clk.start_fast_clock = 1'b1;
+	#2us;
+	tb_clk.start_fast_clock = 1'b0;
+	#2us;
 	reset = 1'b0;
-	#2ns;
+	#2us;
 	cfg_trans.write_neuron_config(neuron_config);
 	cfg_trans.write_synapse_dendrite_config(dendrite_config,synapse_config);
+	tb_clk.start_fast_clock = 1'b1;
 	spike_trans.send_spikes();
-	#10ns;
+	#100ns;
 	$finish();
 end
 
@@ -93,8 +101,7 @@ end
 
 nn #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS))
 nn_i(
-	.clk(fast_clk),
-	.reset,
+	.sys_if(sys_if),
 	.input_spike(spike_in),
 	.cfg_in,
 	.cfg_out

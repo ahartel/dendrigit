@@ -62,6 +62,8 @@ def build(bld):
         source = [
             top + '/source/hdl/rtl/fp_package.sv',
             top + '/source/hdl/rtl/config_if.sv',
+            top + '/source/hdl/rtl/system_if.sv',
+            top + '/source/hdl/rtl/spike_in_if.sv',
             top + '/source/hdl/rtl/synapse_dendrite_if.sv',
             top + '/source/hdl/rtl/dendrite_neuron_if.sv',
             top + '/source/hdl/rtl/neuron.sv',
