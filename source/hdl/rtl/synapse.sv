@@ -16,20 +16,23 @@ module synapse
 	config_if.slave cfg_in,
 	config_if.master cfg_out
 );
+	localparam right_shift_decay_gl = 15;
+	localparam right_shift_output_current = 9;
 
-	fp::fpType El, gl, decay_gl, tau_gl, gl_jump, sub_result;
-	fp::fpType dummy;
-	fp::fpWideType end_result;
+	fp::fpType E_rev, gl, decay_gl_shifted, tau_syn, gl_jump, E_rev_vmem_diff;
+	fp::fpWideType decay_gl;
+	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
-		El <= cfg_in.data_in;
-		gl_jump <= El;
-		tau_gl <= gl_jump;
-		cfg_out.data_in <= tau_gl;
+		E_rev <= cfg_in.data_in;
+		gl_jump <= E_rev;
+		tau_syn <= gl_jump;
+		cfg_out.data_in <= tau_syn;
 	end
 
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gl (.A(gl),.B(tau_gl),.PRODUCT({dummy,decay_gl}),.TC(1'b0));
+	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gl (.A(gl),.B(tau_syn),.PRODUCT(decay_gl),.TC(1'b0));
+	assign decay_gl_shifted = (decay_gl>>right_shift_decay_gl)&16'hffff;
 
 	// gl
 	always_ff @(posedge clk) begin
@@ -38,30 +41,31 @@ module synapse
 		end
 		else begin
 			if (input_spike) begin
-				gl <= gl - decay_gl + gl_jump;
+				gl <= gl - decay_gl_shifted + gl_jump;
+			end
+			else if (gl==1) begin
+				gl <= 0;
 			end
 			else if (gl>0) begin
-				gl <= gl - decay_gl;
+				if (decay_gl_shifted>0) begin
+					gl <= gl - decay_gl_shifted;
+				end
+				else if (decay_gl_shifted==0) begin
+					gl <= 0;
+				end
 			end
 		end
 	end
 
-	//DW_fp_addsub #(.ieee_compliance(1)) U1(.a(El),.b(dendrite.vmem),.op(1'b1),.z(sub_result));
-	DW01_addsub #(.width(fp::WORD_LENGTH)) U1(.A(El),.B(dendrite.vmem),.ADD_SUB(1'b1),.CI(1'b0),.SUM(sub_result));
-	//DW_fp_mult   #(.ieee_compliance(1)) U2(.a(sub_result),.b(gl),.z(end_result),.rnd(3'b000));
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) U2(.A(sub_result),.B(gl),.PRODUCT(end_result),.TC(1'b0));
+	DW01_sub #(.width(fp::WORD_LENGTH)) U1(.A(E_rev),.B(dendrite.vmem),.CI(1'b0),.DIFF(E_rev_vmem_diff));
+	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) U2(.A(E_rev_vmem_diff),.B({1'b0,gl}),.PRODUCT(output_current),.TC(1'b1));
 
 	always_ff @(posedge clk) begin
 		if (reset) begin
 			dendrite.output_current <= 0;
 		end
 		else begin
-			if (gl > 0) begin
-				dendrite.output_current <= end_result[fp::WORD_LENGTH-1:fp::WORD_LENGTH/2];
-			end
-			else begin
-				dendrite.output_current <= 0;
-			end
+			dendrite.output_current <= (output_current>>right_shift_output_current)&16'hffff;
 		end
 	end
 

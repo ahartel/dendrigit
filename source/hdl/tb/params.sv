@@ -28,6 +28,10 @@ class synapse_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 	fp::fpType gl_jump[NUM_SYNAPSE_ROWS][NUM_COLS*2];
 	fp::fpType tau_gl[NUM_SYNAPSE_ROWS][NUM_COLS*2];
 
+	localparam logic[15:0] EL_SCALE = 64;
+	localparam logic[15:0] GL_JUMP_SCALE = 1;
+	localparam logic[15:0] TAU_GL_SCALE = 32768;
+
 	function new();
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			for (integer n=0;n<NUM_COLS*2;n++) begin
@@ -36,6 +40,15 @@ class synapse_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 				tau_gl[r][n] = 0;
 			end
 		end
+	endfunction
+
+	function void set_bio(integer row, integer col, integer p, real value);
+		if (p==0)
+			El[row][col] = shortint'(value*EL_SCALE);
+		else if (p==1)
+			gl_jump[row][col] = shortint'(value*GL_JUMP_SCALE);
+		else if (p==2)
+			tau_gl[row][col] = shortint'(1.0/value*TAU_GL_SCALE);
 	endfunction
 
 	function void set(integer row, integer col, integer p, fp::fpType value);
@@ -65,12 +78,39 @@ class synapse_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 endclass
 
 class dendrite_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
-	function fp::fpType get(integer row, integer n, integer p);
-		return 0;
+	fp::fpType El[NUM_SYNAPSE_ROWS][NUM_COLS];
+	fp::fpType tau_mem[NUM_SYNAPSE_ROWS][NUM_COLS];
+
+	localparam logic[15:0] EL_SCALE = 64;
+	localparam logic[15:0] TAU_MEM_SCALE = 32768;
+
+	function new();
+		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
+			for (integer n=0;n<NUM_COLS;n++) begin
+				El[r][n] = 0;
+				tau_mem[r][n] = 0;
+			end
+		end
+	endfunction
+
+	function void set_bio(integer row, integer col, integer p, real value);
+		if (p==0)
+			El[row][col] = shortint'(value*EL_SCALE);
+		else if (p==1)
+			tau_mem[row][col] = shortint'(1.0/value*TAU_MEM_SCALE);
+	endfunction
+
+	function fp::fpType get(integer row, integer col, integer p);
+		if (p==0) begin
+			return El[row][col];
+		end
+		else if (p==1) begin
+			return tau_mem[row][col];
+		end
 	endfunction
 endclass
 
-class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=1,NUM_SYNAPSE_PARAMS=3,NUM_DENDRITE_PARAMS=0);
+class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=1,NUM_SYNAPSE_PARAMS=3,NUM_DENDRITE_PARAMS=2);
 	virtual config_if cfg_if[NUM_SYNAPSE_ROWS+1];
 
 	function new (virtual config_if cfg[NUM_SYNAPSE_ROWS+1]);

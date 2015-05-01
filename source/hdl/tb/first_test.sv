@@ -30,6 +30,7 @@ spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_
 
 initial begin
 	spike_trans.append_spike(50,1);
+	spike_trans.append_spike(60,1);
 	spike_trans.append_spike(100,2);
 	spike_trans.append_spike(150,3);
 end
@@ -38,33 +39,36 @@ initial begin
 	neuron_config.set(0,0,1);
 	neuron_config.set(1,0,2);
 	// first row, first column
-	synapse_config.set(0,0,0,1);
-	synapse_config.set(0,0,1,2);
-	synapse_config.set(0,0,2,3);
-	synapse_config.set(0,1,0,4);
-	synapse_config.set(0,1,1,5);
-	synapse_config.set(0,1,2,6);
+	synapse_config.set_bio(0,0,0,-10); // El
+	synapse_config.set(0,0,1,16);
+	synapse_config.set_bio(0,0,2,2); // tau_syn
+	synapse_config.set(0,1,0,4); // El
+	synapse_config.set(0,1,1,16);
+	synapse_config.set_bio(0,1,2,6); // tau_syn
 	// first row, second column
-	synapse_config.set(0,2,0,7);
+	synapse_config.set(0,2,0,7); // El
 	synapse_config.set(0,2,1,8);
-	synapse_config.set(0,2,2,9);
-	synapse_config.set(0,3,0,10);
+	synapse_config.set_bio(0,2,2,9); // tau_syn
+	synapse_config.set(0,3,0,10); // El
 	synapse_config.set(0,3,1,11);
-	synapse_config.set(0,3,2,12);
+	synapse_config.set_bio(0,3,2,12); // tau_syn
 	// second row, first column
-	synapse_config.set(1,0,0,16);
+	synapse_config.set(1,0,0,16); // El
 	synapse_config.set(1,0,1,17);
-	synapse_config.set(1,0,2,18);
-	synapse_config.set(1,1,0,19);
+	synapse_config.set_bio(1,0,2,15); // tau_syn
+	synapse_config.set(1,1,0,19); // El
 	synapse_config.set(1,1,1,20);
-	synapse_config.set(1,1,2,21);
+	synapse_config.set_bio(1,1,2,18); // tau_syn
 	// second row, first column
-	synapse_config.set(1,2,0,22);
+	synapse_config.set(1,2,0,22); // El
 	synapse_config.set(1,2,1,23);
-	synapse_config.set(1,2,2,24);
-	synapse_config.set(1,3,0,25);
+	synapse_config.set_bio(1,2,2,21); // tau_syn
+	synapse_config.set(1,3,0,25); // El
 	synapse_config.set(1,3,1,26);
-	synapse_config.set(1,3,2,27);
+	synapse_config.set_bio(1,3,2,24); // tau_syn
+	// denrites
+	dendrite_config.set_bio(0,0,0,-60); // El
+	dendrite_config.set_bio(0,0,1,10); // tau_mem
 end
 
 initial begin

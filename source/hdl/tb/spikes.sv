@@ -3,7 +3,8 @@
 
 class spike_transactor #(NUM_SYNAPSE_ROWS=1);
 	virtual spike_in_if spike_in[NUM_SYNAPSE_ROWS];
-	virtual system_if sys_if;
+	virtual tb_clk_if tb_clk;
+
 	class spike_t;
 		logic[NUM_SYNAPSE_ROWS-1:0] rows;
 		integer t;
@@ -16,9 +17,11 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1);
 
 	spike_t spikes[$];
 
-	function new(virtual spike_in_if intf[NUM_SYNAPSE_ROWS], virtual system_if sysif);
+	function new(virtual spike_in_if intf[NUM_SYNAPSE_ROWS], virtual tb_clk_if tbck);
 		spike_in = intf;
-		sys_if = sysif;
+		tb_clk = tbck;
+
+
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++)
 			spike_in[r].valid = 1'b0;
 	endfunction
@@ -34,7 +37,7 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1);
 		for (integer i=0;i<spikes.size();i++) begin
 			this_spike = spikes[i];
 			while (t < this_spike.t) begin
-				@(posedge sys_if.fast_clk);
+				@(posedge tb_clk.fast_clk);
 				for (integer r=0;r<NUM_SYNAPSE_ROWS;r++)
 					spike_in[r].valid = 1'b0;
 				t = t + 1;
@@ -43,7 +46,7 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1);
 				spike_in[r].valid = this_spike.rows[r];
 			end
 		end
-		@(posedge sys_if.fast_clk);
+		@(posedge tb_clk.fast_clk);
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++)
 			spike_in[r].valid = 1'b0;
 	endtask
