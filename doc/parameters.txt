@@ -1,0 +1,14 @@
+16 bit integer:
+(signed)	-32768	32767
+(unsigned)	0		65535
+
+parameter	units	min		max		factor
+========================================== unsigned
+tau_syn		ms		2		100		512
+1/tau_syn	kHz		0.01	0.5		16384
+g_e			nS		0		10		512
+g_i			nS		0		100		512
+========================================== signed
+E_rev_e		mV		-10(?)	10(?)	
+E_rev_i		mV		-70		-90		
+V_mem		mV		-100	300		64

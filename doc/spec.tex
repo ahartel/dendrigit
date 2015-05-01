@@ -1,0 +1,67 @@
+\documentclass[a4paper]{report}
+
+\begin{document}
+\title{Hicdinn}
+\author{Andreas Hartel}
+\date{May 2015}
+\maketitle
+
+\section{Synapse}
+\subsection{Ports}
+	\begin{itemize}
+		\item \texttt{output} $I_{out}$
+		\item \texttt{input} $V_{mem}$
+	\end{itemize}
+\subsection{Arithmetic elements}
+\begin{itemize}
+	\item MULTIPLIER for syn. conductance and syn. time constant
+		\begin{equation}
+			g_{syn}^{decay} = g_{syn} \cdot \tau_{syn}^{-1}
+		\end{equation}
+	\item SUBTRACTOR for diff. of reversal potential and membrane potential
+		\begin{equation}
+			V_{mem,rev}^{diff} = E_{rev} - V_{mem}
+		\end{equation}
+	\item MULTIPLIER of difference of potentials and momentary conductance
+		\begin{equation}
+			I_{syn} = g_{syn} \cdot V_{mem,rev}^{diff}
+		\end{equation}
+\end{itemize}
+\subsection{Parameters}
+$E_{rev}$, $A(9,6)$\\
+$g_l^{jump}$, $U(7,9)$\\
+$\tau_{syn}^{-1}$, $U(1,15)$\\
+\section{Dendritic element}
+\subsection{Ports}
+	\begin{itemize}
+		\item \texttt{input} $I_{syn,0}$
+		\item \texttt{input} $I_{syn,1}$
+		\item \texttt{output} $V_{mem}$
+	\end{itemize}
+\subsection{Arithmetic elements}
+\begin{itemize}
+	\item ADDER for syn. currents from both synapses connecting to this element
+		\begin{equation}
+			I_{syn}^{tot} = I_{syn,0} + I_{syn,1}
+		\end{equation}
+	\item ADDER for sum of synaptic currents and current membrane potential
+		\begin{equation}
+			V_{mem}^{syn} = V_{mem} + I_{syn}^{tot}
+		\end{equation}
+	\item SUBTRACTOR for diff. of reversal potential and membrane potential
+		\begin{equation}
+			V_{mem,rev}^{diff} = E_l - V_{mem}
+		\end{equation}
+	\item MULTIPLIER of difference of potentials and membrane time constant
+		\begin{equation}
+			I_{leak} = \tau_{mem}^{-1} \cdot V_{mem,rev}^{diff}
+		\end{equation}
+	\item ADDER for membrane voltage (incl. syn. current) and leak current
+		\begin{equation}
+			V_{mem}^{new} = V_{mem}^{syn} + I_{leak}
+		\end{equation}
+\end{itemize}
+\subsection{Parameters}
+$E_l$, $A(9,6)$\\
+$\tau_{mem}^{-1}$, $U(1,15)$\\
+\end{document}
