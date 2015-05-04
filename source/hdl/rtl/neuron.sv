@@ -9,7 +9,9 @@ module neuron
 	input logic clk,
 	input logic reset,
 	// spike_in_interface
-	dendrite_neuron_if.neuron dendrite,
+	input logic input_spike_valid,
+	input fp::fpType dendrite_current,
+	input fp::fpType vmem,
 	// write_interface
 	config_if.slave cfg_in,
 	config_if.master cfg_out,
@@ -84,18 +86,18 @@ always_ff @(posedge clk) begin
 		membrane <= v_reset;
 	end
 	else begin
-		if (dendrite.input_spike_valid) begin
+		if (input_spike_valid) begin
 			if (taumem_counter_wrap) begin
-				if ((membrane<<1) + dendrite.input_current > v_threshold) begin
+				if ((membrane<<1) + dendrite_current > v_threshold) begin
 					membrane <= v_reset;
 					output_spike <= 1'b1;
 				end
 				else begin
-					membrane <= (membrane<<1) + dendrite.input_current;
+					membrane <= (membrane<<1) + dendrite_current;
 				end
 			end
 			else begin
-				membrane <= membrane + dendrite.input_current;
+				membrane <= membrane + dendrite_current;
 			end
 		end
 		else if (taumem_counter_wrap) begin

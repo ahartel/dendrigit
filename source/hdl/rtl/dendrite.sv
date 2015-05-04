@@ -4,7 +4,10 @@ module dendrite(
 	input logic reset,
 	config_if.slave cfg_in,
 	config_if.master cfg_out,
-	dendrite_neuron_if neuron,
+	output fp::fpType upper_vmem,
+	input fp::fpType upper_current,
+	input fp::fpType lower_vmem,
+	output fp::fpType lower_current,
 	synapse_dendrite_if synapse0,
 	synapse_dendrite_if synapse1
 );

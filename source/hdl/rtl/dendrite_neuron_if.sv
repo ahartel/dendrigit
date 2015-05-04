@@ -1,12 +1,13 @@
 
 interface dendrite_neuron_if();
-	parameter CURRENT_WIDTH = 8;
+	parameter NUM_COLS = 1;
 
-	logic input_spike_valid;
-	logic [CURRENT_WIDTH-1:0] input_current;
+	logic input_spike_valid[NUM_COLS];
+	fp::fpType current[NUM_COLS];
+	fp::fpType vmem[NUM_COLS];
 
-	modport dendrite( output input_spike_valid, input_current);
-	modport neuron( input input_spike_valid, input_current);
+	modport dendrite( output input_spike_valid, current, input vmem);
+	modport neuron( input input_spike_valid, current, output vmem);
 
 
 endinterface
