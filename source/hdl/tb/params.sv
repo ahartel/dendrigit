@@ -80,15 +80,18 @@ endclass
 class dendrite_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 	fp::fpType El[NUM_SYNAPSE_ROWS][NUM_COLS];
 	fp::fpType tau_mem[NUM_SYNAPSE_ROWS][NUM_COLS];
+	fp::fpType g_int[NUM_SYNAPSE_ROWS][NUM_COLS];
 
 	localparam logic[15:0] EL_SCALE = 64;
 	localparam logic[15:0] TAU_MEM_SCALE = 32768;
+	localparam logic[15:0] G_INT_SCALE = 65536;
 
 	function new();
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			for (integer n=0;n<NUM_COLS;n++) begin
 				El[r][n] = 0;
 				tau_mem[r][n] = 0;
+				g_int[r][n] = 0;
 			end
 		end
 	endfunction
@@ -98,19 +101,21 @@ class dendrite_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 			El[row][col] = shortint'(value*EL_SCALE);
 		else if (p==1)
 			tau_mem[row][col] = shortint'(1.0/value*TAU_MEM_SCALE);
+		else if (p==2)
+			g_int[row][col] = shortint'(1.0/value*G_INT_SCALE);
 	endfunction
 
 	function fp::fpType get(integer row, integer col, integer p);
-		if (p==0) begin
+		if (p==0)
 			return El[row][col];
-		end
-		else if (p==1) begin
+		else if (p==1)
 			return tau_mem[row][col];
-		end
+		else if (p==2)
+			return g_int[row][col];
 	endfunction
 endclass
 
-class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=1,NUM_SYNAPSE_PARAMS=3,NUM_DENDRITE_PARAMS=2);
+class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=1,NUM_SYNAPSE_PARAMS=3,NUM_DENDRITE_PARAMS=3);
 	virtual config_if cfg_if[NUM_SYNAPSE_ROWS+1];
 
 	function new (virtual config_if cfg[NUM_SYNAPSE_ROWS+1]);
