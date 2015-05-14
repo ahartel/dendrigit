@@ -12,6 +12,9 @@ module nn #(
 );
 
 	dendrite_neuron_if #(.NUM_COLS(NUM_COLS)) dendr_nrn_if[NUM_SYNAPSE_ROWS+1]();
+	for (genvar j=0; j<NUM_COLS; j=j+1) begin
+		assign dendr_nrn_if[0].current[j] = 0;
+	end
 
 	generate
 		for (genvar j=0; j<NUM_SYNAPSE_ROWS; j=j+1) begin : synapse_rows

@@ -84,7 +84,7 @@ class dendrite_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 
 	localparam logic[15:0] EL_SCALE = 64;
 	localparam logic[15:0] TAU_MEM_SCALE = 32768;
-	localparam logic[15:0] G_INT_SCALE = 65536;
+	localparam logic[16:0] G_INT_SCALE = 65536;
 
 	function new();
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
@@ -102,7 +102,7 @@ class dendrite_params #(int NUM_SYNAPSE_ROWS=1,int NUM_COLS=1);
 		else if (p==1)
 			tau_mem[row][col] = shortint'(1.0/value*TAU_MEM_SCALE);
 		else if (p==2)
-			g_int[row][col] = shortint'(1.0/value*G_INT_SCALE);
+			g_int[row][col] = shortint'(value*G_INT_SCALE);
 	endfunction
 
 	function fp::fpType get(integer row, integer col, integer p);

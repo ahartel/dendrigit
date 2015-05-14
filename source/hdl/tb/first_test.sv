@@ -66,9 +66,15 @@ initial begin
 	synapse_config.set(1,3,0,25); // El
 	synapse_config.set(1,3,1,26);
 	synapse_config.set_bio(1,3,2,24); // tau_syn
-	// denrites
+	// dendrites
+	// row 0, col 0
 	dendrite_config.set_bio(0,0,0,-60); // El
 	dendrite_config.set_bio(0,0,1,10); // tau_mem
+	dendrite_config.set_bio(0,0,2,0.001); // tau_mem
+	// row 1, col 0
+	dendrite_config.set_bio(1,0,0,-60); // El
+	dendrite_config.set_bio(1,0,1,10); // tau_mem
+	dendrite_config.set_bio(1,0,2,0.001); // tau_mem
 end
 
 initial begin
@@ -83,6 +89,7 @@ initial begin
 	cfg_trans.write_synapse_dendrite_config(dendrite_config,synapse_config);
 	tb_clk.start_fast_clock = 1'b1;
 	spike_trans.send_spikes();
+	#100ns;
 	#100ns;
 	$finish();
 end
