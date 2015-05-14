@@ -19,15 +19,15 @@ module synapse
 	localparam right_shift_decay_gl = 15;
 	localparam right_shift_output_current = 9;
 
-	fp::fpType E_rev, gl, decay_gl_shifted, tau_syn, gl_jump, E_rev_vmem_diff;
+	fp::fpType E_rev, gl, decay_gl_shifted, tau_syn, weight, E_rev_vmem_diff;
 	fp::fpWideType decay_gl;
 	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
 		E_rev <= cfg_in.data_in;
-		gl_jump <= E_rev;
-		tau_syn <= gl_jump;
+		weight <= E_rev;
+		tau_syn <= weight;
 		cfg_out.data_in <= tau_syn;
 	end
 
@@ -41,7 +41,7 @@ module synapse
 		end
 		else begin
 			if (input_spike) begin
-				gl <= gl - decay_gl_shifted + gl_jump;
+				gl <= gl - decay_gl_shifted + weight;
 			end
 			else if (gl==1) begin
 				gl <= 0;
