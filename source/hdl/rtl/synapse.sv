@@ -16,12 +16,14 @@ module synapse
 	config_if.slave cfg_in,
 	config_if.master cfg_out
 );
-	localparam right_shift_decay_gl = 15;
+	localparam right_shift_decay_gsyn = 15;
 	localparam right_shift_output_current = 9;
 
-	fp::fpType E_rev, gl, decay_gl_shifted, tau_syn, weight, E_rev_vmem_diff;
-	fp::fpWideType decay_gl;
+	fp::fpType E_rev, gsyn, decay_gsyn_shifted, tau_syn, weight, E_rev_vmem_diff;
+	fp::fpType gsyn_minus_decay, new_gsyn;
+	fp::fpWideType decay_gsyn;
 	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
+	logic carry_sub_gsyn_decay;
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
@@ -31,34 +33,51 @@ module synapse
 		cfg_out.data_in <= tau_syn;
 	end
 
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gl (.A(gl),.B(tau_syn),.PRODUCT(decay_gl),.TC(1'b0));
-	assign decay_gl_shifted = (decay_gl>>right_shift_decay_gl)&16'hffff;
+	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gsyn (.A(gsyn),.B(tau_syn),.PRODUCT(decay_gsyn),.TC(1'b0));
+	assign decay_gsyn_shifted = (decay_gsyn>>right_shift_decay_gsyn)&16'hffff;
+	DW01_sub #(
+		.width(fp::WORD_LENGTH)
+	) sub_gsyn_decay (
+		.CI(1'b0),
+		.CO(carry_sub_gsyn_decay),
+		.A(gsyn),
+		.B(decay_gsyn_shifted),
+		.DIFF(gsyn_minus_decay)
+	);
+	DW01_add #(
+		.width(fp::WORD_LENGTH)
+	) add_gsyn_weight (
+		.CI(carry_sub_gsyn_decay),
+		.A(gsyn_minus_decay),
+		.B(weight),
+		.SUM(new_gsyn)
+	);
 
-	// gl
+	// gsyn
 	always_ff @(posedge clk) begin
 		if (reset) begin
-			gl <= 0;
+			gsyn <= 0;
 		end
 		else begin
 			if (input_spike) begin
-				gl <= gl - decay_gl_shifted + weight;
+				gsyn <= new_gsyn;
 			end
-			else if (gl==1) begin
-				gl <= 0;
+			else if (gsyn==1) begin
+				gsyn <= 0;
 			end
-			else if (gl>0) begin
-				if (decay_gl_shifted>0) begin
-					gl <= gl - decay_gl_shifted;
+			else if (gsyn>0) begin
+				if (decay_gsyn_shifted>0) begin
+					gsyn <= gsyn_minus_decay;
 				end
-				else if (decay_gl_shifted==0) begin
-					gl <= 0;
+				else if (decay_gsyn_shifted==0) begin
+					gsyn <= 0;
 				end
 			end
 		end
 	end
 
 	DW01_sub #(.width(fp::WORD_LENGTH)) U1(.A(E_rev),.B(dendrite.vmem),.CI(1'b0),.DIFF(E_rev_vmem_diff));
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) U2(.A(E_rev_vmem_diff),.B({1'b0,gl}),.PRODUCT(output_current),.TC(1'b1));
+	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) U2(.A(E_rev_vmem_diff),.B({1'b0,gsyn}),.PRODUCT(output_current),.TC(1'b1));
 
 	always_ff @(posedge clk) begin
 		if (reset) begin
