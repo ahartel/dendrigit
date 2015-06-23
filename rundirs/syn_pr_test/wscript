@@ -67,6 +67,7 @@ def build(bld):
             top + '/source/hdl/rtl/synapse_dendrite_if.sv',
             top + '/source/hdl/rtl/dendrite_neuron_if.sv',
             top + '/source/hdl/rtl/neuron.sv',
+            top + '/source/hdl/rtl/dendrite.sv',
             top + '/source/hdl/rtl/synapse.sv',
             top + '/source/hdl/rtl/nn.sv'
         ],

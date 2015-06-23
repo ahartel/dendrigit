@@ -22,9 +22,9 @@ spike_in_if spike_in[NUM_SYNAPSE_ROWS]();
 
 config_if cfg_in[NUM_SYNAPSE_ROWS+1](),cfg_out[NUM_SYNAPSE_ROWS+1]();
 
-neuron_params   #(.NUM_COLS(NUM_COLS)) neuron_config = new();
-dendrite_params #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) dendrite_config = new();
-synapse_params  #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) synapse_config = new();
+neuron_params neuron_config[NUM_COLS];
+dendrite_params dendrite_config[NUM_SYNAPSE_ROWS][NUM_COLS];
+synapse_params synapse_config[NUM_SYNAPSE_ROWS][NUM_COLS*2];
 config_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) cfg_trans = new(cfg_in);
 spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,tb_clk);
 
@@ -36,45 +36,26 @@ initial begin
 end
 
 initial begin
-	neuron_config.set(0,0,1);
-	neuron_config.set(1,0,2);
-	// first row, first column
-	synapse_config.set_bio(0,0,0,-10); // El
-	synapse_config.set(0,0,1,16);
-	synapse_config.set_bio(0,0,2,2); // tau_syn
-	synapse_config.set(0,1,0,4); // El
-	synapse_config.set(0,1,1,16);
-	synapse_config.set_bio(0,1,2,6); // tau_syn
-	// first row, second column
-	synapse_config.set(0,2,0,7); // El
-	synapse_config.set(0,2,1,8);
-	synapse_config.set_bio(0,2,2,9); // tau_syn
-	synapse_config.set(0,3,0,10); // El
-	synapse_config.set(0,3,1,11);
-	synapse_config.set_bio(0,3,2,12); // tau_syn
-	// second row, first column
-	synapse_config.set(1,0,0,16); // El
-	synapse_config.set(1,0,1,17);
-	synapse_config.set_bio(1,0,2,15); // tau_syn
-	synapse_config.set(1,1,0,19); // El
-	synapse_config.set(1,1,1,20);
-	synapse_config.set_bio(1,1,2,18); // tau_syn
-	// second row, first column
-	synapse_config.set(1,2,0,22); // El
-	synapse_config.set(1,2,1,23);
-	synapse_config.set_bio(1,2,2,21); // tau_syn
-	synapse_config.set(1,3,0,25); // El
-	synapse_config.set(1,3,1,26);
-	synapse_config.set_bio(1,3,2,24); // tau_syn
-	// dendrites
-	// row 0, col 0
-	dendrite_config.set_bio(0,0,0,-60); // El
-	dendrite_config.set_bio(0,0,1,10); // tau_mem
-	dendrite_config.set_bio(0,0,2,0.001); // tau_mem
-	// row 1, col 0
-	dendrite_config.set_bio(1,0,0,-60); // El
-	dendrite_config.set_bio(1,0,1,10); // tau_mem
-	dendrite_config.set_bio(1,0,2,0.001); // tau_mem
+	for (integer c=0; c<NUM_COLS; c++) begin
+		neuron_config[c] = new();
+		neuron_config[c].set_tau_mem(1);
+		for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
+			synapse_config[r][c*2+0] = new();
+			synapse_config[r][c*2+0].set_bio(0,-10);
+			synapse_config[r][c*2+0].set(1,16);
+			synapse_config[r][c*2+0].set_bio(2,2);
+			synapse_config[r][c*2+1] = new();
+			synapse_config[r][c*2+1].set_bio(0,-10);
+			synapse_config[r][c*2+1].set(1,16);
+			synapse_config[r][c*2+1].set_bio(2,2);
+
+			dendrite_config[r][c] = new();
+			dendrite_config[r][c].set_bio(0,-60); // El
+			dendrite_config[r][c].set_bio(1,10); // tau_mem
+			dendrite_config[r][c].set_bio(2,0.001); // tau_mem
+		end
+	end
+	synapse_config[0][3].set(2,3);
 end
 
 initial begin
