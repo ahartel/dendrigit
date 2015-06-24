@@ -30,7 +30,11 @@ spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_
 
 initial begin
 	spike_trans.append_spike(50,1);
+	spike_trans.append_spike(55,1);
 	spike_trans.append_spike(60,1);
+	spike_trans.append_spike(65,1);
+	spike_trans.append_spike(70,1);
+	spike_trans.append_spike(75,1);
 	spike_trans.append_spike(100,2);
 	spike_trans.append_spike(150,3);
 end
@@ -38,21 +42,24 @@ end
 initial begin
 	for (integer c=0; c<NUM_COLS; c++) begin
 		neuron_config[c] = new();
-		neuron_config[c].set_tau_mem(1);
+		neuron_config[c].set_E_l(-60);
+		neuron_config[c].set_tau_mem(20);
+		neuron_config[c].set_v_thresh(-50);
+		neuron_config[c].set(3,10);
 		for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
 			synapse_config[r][c*2+0] = new();
 			synapse_config[r][c*2+0].set_bio(0,-10);
-			synapse_config[r][c*2+0].set(1,16);
+			synapse_config[r][c*2+0].set(1,32);
 			synapse_config[r][c*2+0].set_bio(2,2);
 			synapse_config[r][c*2+1] = new();
 			synapse_config[r][c*2+1].set_bio(0,-10);
-			synapse_config[r][c*2+1].set(1,16);
+			synapse_config[r][c*2+1].set(1,32);
 			synapse_config[r][c*2+1].set_bio(2,2);
 
 			dendrite_config[r][c] = new();
 			dendrite_config[r][c].set_bio(0,-60); // El
-			dendrite_config[r][c].set_bio(1,10); // tau_mem
-			dendrite_config[r][c].set_bio(2,0.001); // tau_mem
+			dendrite_config[r][c].set_bio(1,20); // tau_mem
+			dendrite_config[r][c].set_bio(2,0.1); // g_int
 		end
 	end
 	synapse_config[0][3].set(2,3);

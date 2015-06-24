@@ -18,7 +18,7 @@ module dendrite(
 	// neuron model parameters
 	fp::fpType E_l, tau_mem, g_int;
 
-	logic synadd_co, carry_add_vmem;
+	logic synadd_co, carry_add_vmem, carry_add_all;
 	fp::fpType vmem, sum_syn_current, new_vmem, vmem_synin, vmem_decay_synin;
 	logic[fp::WORD_LENGTH*2+1-1:0] decay_vmem, current_to_lower;
 	fp::fpType E_l_vmem_diff, decay_vmem_shifted, compartment_difference;
@@ -56,6 +56,7 @@ module dendrite(
 		.A(E_l),
 		.B(vmem),
 		.CI(1'b0),
+		.CO(),
 		.DIFF(E_l_vmem_diff)
 	);
 	// tau_mem implicitely converted to TC
@@ -83,7 +84,8 @@ module dendrite(
 	);
 
 	// calculate current into lower dendrite compartment
-	DW01_sub #(.width(fp::WORD_LENGTH)) add_lower (
+	// These are both membrane potentials of the type A(9,6) 
+	DW01_sub #(.width(fp::WORD_LENGTH)) sub_lower (
 		.A(vmem),
 		.B(lower_vmem),
 		.CO(add_lower_carry),
@@ -91,6 +93,10 @@ module dendrite(
 		.DIFF(compartment_difference)
 	);
 	// g_int implicitely converted to TC
+	// Here, we are multiplying two values of the type A(9,6) and A(0,16)
+	// 16 + 17 = 33 bits (both have a sign bit that is not explicitely given),
+	// resulting in type A(10,22) which has 33 bits
+	// Therefore, the result has to be shifted by 16 bits.
 	DW02_mult #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) mult_comp_diff (
 		.A(compartment_difference),
 		.B({1'b0,g_int}),
