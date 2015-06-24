@@ -48,6 +48,7 @@ module synapse
 		.width(fp::WORD_LENGTH)
 	) add_gsyn_weight (
 		.CI(carry_sub_gsyn_decay),
+		.CO(),
 		.A(gsyn_minus_decay),
 		.B(weight),
 		.SUM(new_gsyn)
@@ -76,7 +77,13 @@ module synapse
 		end
 	end
 
-	DW01_sub #(.width(fp::WORD_LENGTH)) U1(.A(E_rev),.B(dendrite.vmem),.CI(1'b0),.DIFF(E_rev_vmem_diff));
+	DW01_sub #(.width(fp::WORD_LENGTH)) U1 (
+		.A(E_rev),
+		.B(dendrite.vmem),
+		.CI(1'b0),
+		.CO(),
+		.DIFF(E_rev_vmem_diff)
+	);
 	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) U2(.A(E_rev_vmem_diff),.B({1'b0,gsyn}),.PRODUCT(output_current),.TC(1'b1));
 
 	always_ff @(posedge clk) begin
