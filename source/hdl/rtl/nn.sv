@@ -69,14 +69,14 @@ module synapse_row #(
 		for (genvar j=0; j<NUM_COLS; j=j+1) begin : synapse_cols
 			synapse synapse_0 (
 				.clk(sys_if.main_clk), .reset(sys_if.reset),
-				.input_spike(spike_input.valid),
+				.input_spike(spike_input),
 				.dendrite(synapse_if[2*j]),
 				.cfg_in(cfg_syn[3*j]),
 				.cfg_out(cfg_syn[3*j+1])
 			);
 			synapse synapse_1 (
 				.clk(sys_if.main_clk), .reset(sys_if.reset),
-				.input_spike(spike_input.valid),
+				.input_spike(spike_input),
 				.dendrite(synapse_if[2*j+1]),
 				.cfg_in(cfg_syn[3*j+2]),
 				.cfg_out(cfg_syn[3*j+3])

@@ -11,7 +11,7 @@ module synapse
 )
 (
 	input logic clk, reset,
-	input logic input_spike,
+	spike_in_if.slave input_spike,
 	synapse_dendrite_if.synapse dendrite,
 	config_if.slave cfg_in,
 	config_if.master cfg_out
@@ -22,15 +22,20 @@ module synapse
 	fp::fpType E_rev, gsyn, decay_gsyn_shifted, tau_syn, weight, E_rev_vmem_diff;
 	fp::fpType gsyn_minus_decay, new_gsyn;
 	fp::fpWideType decay_gsyn;
+	fp::fpType general_config;
+	logic[7:0] address;
 	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
 	logic carry_sub_gsyn_decay;
+
+	assign address = general_config[7:0];
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
 		E_rev <= cfg_in.data_in;
 		weight <= E_rev;
 		tau_syn <= weight;
-		cfg_out.data_in <= tau_syn;
+		general_config <= tau_syn;
+		cfg_out.data_in <= general_config;
 	end
 
 	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH)) mult_decay_gsyn (.A(gsyn),.B(tau_syn),.PRODUCT(decay_gsyn),.TC(1'b0));
@@ -60,7 +65,7 @@ module synapse
 			gsyn <= 0;
 		end
 		else begin
-			if (input_spike) begin
+			if (input_spike.valid && input_spike.address == address) begin
 				gsyn <= new_gsyn;
 			end
 			else if (gsyn==1) begin

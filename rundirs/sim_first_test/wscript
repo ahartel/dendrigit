@@ -99,6 +99,7 @@ def build(bld):
 				top +'/source/hdl/rtl/nn.sv',
 				top +'/source/hdl/rtl/dendrite.sv',
 				top +'/source/hdl/tb/first_test.sv',
+				top +'/source/hdl/tb/external_spike_router.sv',
 			]),
 		worklib = 'worklib',
 		features = 'cds_compile_hdl',

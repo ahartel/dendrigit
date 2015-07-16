@@ -72,12 +72,14 @@ class synapse_params;
 	fp::fpType E_syn;
 	fp::fpType gl_jump;
 	fp::fpType tau_gl;
+	fp::fpType general_config;
 
 	localparam logic[15:0] EL_SCALE = 64;
 	localparam logic[15:0] GL_JUMP_SCALE = 1;
 	localparam logic[15:0] TAU_GL_SCALE = 32768;
 
 	function new();
+		general_config = 0;
 		E_syn = 0;
 		gl_jump = 0;
 		tau_gl = 0;
@@ -115,6 +117,17 @@ class synapse_params;
 			//$display("Value %d",tau_gl[row][col]);
 			return tau_gl;
 		end
+		else if (p==3) begin
+			return general_config;
+		end
+	endfunction
+
+	function void set_address(logic[7:0] addr);
+		general_config[7:0] = addr;
+	endfunction
+
+	function logic[7:0] get_address();
+		return general_config[7:0];
 	endfunction
 endclass
 
@@ -154,7 +167,7 @@ class dendrite_params;
 	endfunction
 endclass
 
-class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=4,NUM_SYNAPSE_PARAMS=3,NUM_DENDRITE_PARAMS=3);
+class config_transactor #(NUM_SYNAPSE_ROWS=1,NUM_COLS=1,NUM_NEURON_PARAMS=4,NUM_SYNAPSE_PARAMS=4,NUM_DENDRITE_PARAMS=3);
 	virtual config_if cfg_if[NUM_SYNAPSE_ROWS+1];
 
 	function new (virtual config_if cfg[NUM_SYNAPSE_ROWS+1]);
