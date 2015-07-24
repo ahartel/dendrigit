@@ -9,14 +9,16 @@ module dendrite(
 	input fp::fpType lower_vmem,
 	output fp::fpType lower_current,
 	synapse_dendrite_if synapse0,
-	synapse_dendrite_if synapse1
+	synapse_dendrite_if synapse1,
+	input fp::fpType E_l
 );
 
 	localparam right_shift_decay_vmem = 15;
 	localparam right_shift_lower_current = 16;
 
 	// neuron model parameters
-	fp::fpType E_l, tau_mem, g_int;
+	//fp::fpType E_l;
+	fp::fpType tau_mem, g_int;
 
 	logic synadd_co, carry_add_vmem, carry_add_all;
 	fp::fpType vmem, sum_syn_current, new_vmem, vmem_synin, vmem_decay_synin;
@@ -29,8 +31,9 @@ module dendrite(
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
-		E_l <= cfg_in.data_in;
-		tau_mem <= E_l;
+		//E_l <= cfg_in.data_in;
+		//tau_mem <= E_l;
+		tau_mem <= cfg_in.data_in;
 		g_int <= tau_mem;
 		cfg_out.data_in <= g_int;
 	end

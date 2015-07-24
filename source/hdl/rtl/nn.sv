@@ -8,7 +8,7 @@ module nn #(
 	spike_in_if.slave input_spike[NUM_SYNAPSE_ROWS],
 	config_if.slave cfg_in[NUM_SYNAPSE_ROWS+1],
 	config_if.master cfg_out[NUM_SYNAPSE_ROWS+1],
-	output logic output_spike[NUM_COLS]
+	spike_out_if.master output_spike[NUM_COLS]
 );
 
 	dendrite_neuron_if #(.NUM_COLS(NUM_COLS)) dendr_nrn_if[NUM_SYNAPSE_ROWS+1]();
@@ -59,11 +59,20 @@ module synapse_row #(
 	spike_in_if spike_input
 );
 
+	fp::fpType E_rev, E_l;
 	config_if cfg_syn[3*NUM_COLS+1]();
-	assign cfg_syn[0].data_in = cfg_in.data_in;
-	assign cfg_syn[0].data_clk = cfg_in.data_clk;
+	config_if global_config_if();
+	assign cfg_syn[0].data_in = global_config_if.data_in;
+	assign cfg_syn[0].data_clk = global_config_if.data_clk;
 
 	synapse_dendrite_if synapse_if[NUM_COLS*2]();
+
+	row_global_parameters global_params(
+		.cfg_in(cfg_in),
+		.cfg_out(global_config_if),
+		.E_rev(E_rev),
+		.E_l(E_l)
+	);
 
 	generate
 		for (genvar j=0; j<NUM_COLS; j=j+1) begin : synapse_cols
@@ -72,14 +81,16 @@ module synapse_row #(
 				.input_spike(spike_input),
 				.dendrite(synapse_if[2*j]),
 				.cfg_in(cfg_syn[3*j]),
-				.cfg_out(cfg_syn[3*j+1])
+				.cfg_out(cfg_syn[3*j+1]),
+				.E_rev
 			);
 			synapse synapse_1 (
 				.clk(sys_if.main_clk), .reset(sys_if.reset),
 				.input_spike(spike_input),
 				.dendrite(synapse_if[2*j+1]),
 				.cfg_in(cfg_syn[3*j+2]),
-				.cfg_out(cfg_syn[3*j+3])
+				.cfg_out(cfg_syn[3*j+3]),
+				.E_rev
 			);
 
 
@@ -92,7 +103,8 @@ module synapse_row #(
 				.lower_vmem(lower.vmem[j]),
 				.lower_current(lower.current[j]),
 				.cfg_in(cfg_syn[3*j+1]),
-				.cfg_out(cfg_syn[3*j+2])
+				.cfg_out(cfg_syn[3*j+2]),
+				.E_l
 			);
 		end
 	endgenerate

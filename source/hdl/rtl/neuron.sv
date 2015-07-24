@@ -14,7 +14,7 @@ module neuron
 	config_if.slave cfg_in,
 	config_if.master cfg_out,
 	// spike_out_interface
-	output logic output_spike
+	spike_out_if.master output_spike
 );
 
 	localparam right_shift_decay_vmem = 15;
@@ -26,6 +26,8 @@ module neuron
 	logic[fp::WORD_LENGTH*2+1-1:0] decay_vmem;
 	// carries
 	logic carry_add_all;
+	// refractory flag
+	logic tauref_counter_hit, refractory, super_thresh;
 
 	assign decay_vmem_shifted = (decay_vmem>>right_shift_decay_vmem)&16'hffff;
 
@@ -85,7 +87,6 @@ module neuron
 		end
 	end
 
-	logic tauref_counter_hit, super_thresh;
 
 	DW01_cmp2 #(.width(fp::WORD_LENGTH)) vt_cmp (
 		.A(vmem),
@@ -98,20 +99,28 @@ module neuron
 
 	always_ff @(posedge clk) begin
 		if (reset) begin
-			output_spike <= 1'b0;
+			output_spike.valid <= 1'b0;
 		end
 		else begin
-			if (super_thresh) begin
-				output_spike <= 1'b1;
+			if (output_spike.valid == 1'b0 && (refractory == 1'b0 || tauref_counter_hit == 1'b1)) begin
+				if (tauref_counter_hit) begin
+					output_spike.valid <= 1'b1;
+					output_spike.on_off <= 1'b0;
+				end
+				else if (super_thresh) begin
+					output_spike.valid <= 1'b1;
+					output_spike.on_off <= 1'b1;
+				end
 			end
-			else if (output_spike && tauref_counter_hit) begin
-				output_spike <= 1'b0;
+			else begin
+				output_spike.valid <= 1'b0;
 			end
 		end
 	end
 
 	logic [COUNTER_WIDTH-1:0] tauref_counter;
 
+	assign refractory = tauref_counter > 0;
 
 	// tauref_counter
 	always_ff @(posedge clk) begin
@@ -121,7 +130,7 @@ module neuron
 		end
 		else begin
 			if (tauref_counter == 0) begin
-				if (output_spike)
+				if (output_spike.valid && output_spike.on_off == 1'b1)
 					tauref_counter <= tauref_counter + 1;
 			end
 			else if (tauref_counter == tau_ref-1) begin

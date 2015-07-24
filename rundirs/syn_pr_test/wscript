@@ -2,13 +2,25 @@
 top = '../../'
 
 def options(opt):
-    pass
+	opt.add_option('--exp', action='store_true', default=True)
+	opt.add_option('--rect', action='store_true', default=False)
 
 def configure(conf):
     conf.env['PROJECT_ROOT'] = top
     conf.load('brick_general')
 
     conf.load('synopsys_dcshell')
+
+    conf.start_msg('Compiling sub-implementation for')
+    if conf.options.rect is True and conf.options.exp is True:
+        raise Exception("Can only simulate either exp. synapses or rect. synapses")
+    elif conf.options.rect is True and conf.options.exp is False:
+        conf.env['exp_not_rect'] = False
+        conf.end_msg('rect_syn_on_off')
+    elif conf.options.rect is False and conf.options.exp is True:
+        conf.end_msg('exp_syn')
+        conf.env['exp_not_rect'] = True
+
 
 def generate_libs(bld):
     #
@@ -55,22 +67,36 @@ def generate_libs(bld):
 def build(bld):
     bld.load('brick_general')
 
-    syn = bld (
-        name = 'synth_hicdinn',
-        design_name = 'nn',
-        features = 'synopsys_dcshell',
-        source = [
+    NETWORK_SOURCES = [
             top + '/source/hdl/rtl/fp_package.sv',
             top + '/source/hdl/rtl/config_if.sv',
             top + '/source/hdl/rtl/system_if.sv',
             top + '/source/hdl/rtl/spike_in_if.sv',
+            top +'/source/hdl/rtl/spike_out_if.sv',
+            top +'/source/hdl/rtl/common/synapse_to_dendrite_current.sv',
             top + '/source/hdl/rtl/synapse_dendrite_if.sv',
             top + '/source/hdl/rtl/dendrite_neuron_if.sv',
             top + '/source/hdl/rtl/neuron.sv',
             top + '/source/hdl/rtl/dendrite.sv',
-            top + '/source/hdl/rtl/synapse.sv',
-            top + '/source/hdl/rtl/nn.sv'
-        ],
+            top + '/source/hdl/rtl/nn.sv',
+            top + '/source/hdl/rtl/row_global_parameters.sv'
+        ]
+
+    if bld.env['exp_not_rect'] is True:
+        NETWORK_SOURCES.extend([
+            top +'/source/hdl/rtl/exp_syn/synapse.sv',
+            ])
+    else:
+        NETWORK_SOURCES.extend([
+            top +'/source/hdl/rtl/rect_syn_on_off/synapse.sv',
+            ])
+
+
+    syn = bld (
+        name = 'synth_hicdinn',
+        design_name = 'nn',
+        features = 'synopsys_dcshell',
+        source = NETWORK_SOURCES,
         tcl_script = top+'/rtl2gds/dc_shell/top.tcl',
         #verilog_search_paths = [ top + '/hicann-dls/units/top/source/hdl/include' ] + bld.env.S2PP_VERILOG_INCLUDE,
     )

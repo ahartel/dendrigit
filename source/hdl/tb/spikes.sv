@@ -24,8 +24,10 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=8);
 		tb_clk = tbck;
 
 
-		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++)
+		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			spike_in[r].valid = 1'b0;
+			spike_in[r].on_off = 1'b1;
+		end
 	endfunction
 
 	function void append_spike (integer timestamp, logic[NUM_SYNAPSE_ROWS-1:0] input_rows, logic[7:0] address);

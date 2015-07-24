@@ -14,12 +14,14 @@ module synapse
 	spike_in_if.slave input_spike,
 	synapse_dendrite_if.synapse dendrite,
 	config_if.slave cfg_in,
-	config_if.master cfg_out
+	config_if.master cfg_out,
+	input fp::fpType E_rev
 );
 	localparam right_shift_decay_gsyn = 15;
 	localparam right_shift_output_current = 9;
 
-	fp::fpType E_rev, gsyn, decay_gsyn_shifted, tau_syn, weight, E_rev_vmem_diff;
+	//fp::fpType E_rev;
+	fp::fpType gsyn, decay_gsyn_shifted, tau_syn, weight;
 	fp::fpType gsyn_minus_decay, new_gsyn;
 	fp::fpWideType decay_gsyn;
 	fp::fpType general_config;
@@ -31,8 +33,7 @@ module synapse
 
 	assign cfg_out.data_clk = cfg_in.data_clk;
 	always_ff @(posedge cfg_in.data_clk) begin
-		E_rev <= cfg_in.data_in;
-		weight <= E_rev;
+		weight <= cfg_in.data_in;
 		tau_syn <= weight;
 		general_config <= tau_syn;
 		cfg_out.data_in <= general_config;
@@ -65,7 +66,7 @@ module synapse
 			gsyn <= 0;
 		end
 		else begin
-			if (input_spike.valid && input_spike.address == address) begin
+			if (input_spike.valid && input_spike.on_off == 1'b1 && input_spike.address == address) begin
 				gsyn <= new_gsyn;
 			end
 			else if (gsyn==1) begin
@@ -82,14 +83,12 @@ module synapse
 		end
 	end
 
-	DW01_sub #(.width(fp::WORD_LENGTH)) U1 (
-		.A(E_rev),
-		.B(dendrite.vmem),
-		.CI(1'b0),
-		.CO(),
-		.DIFF(E_rev_vmem_diff)
+	synapse_to_dendrite_current syn_to_den(
+		.E_rev(E_rev),
+		.gsyn(gsyn),
+		.vmem(dendrite.vmem),
+		.output_current(output_current)
 	);
-	DW02_mult   #(.A_width(fp::WORD_LENGTH),.B_width(fp::WORD_LENGTH+1)) U2(.A(E_rev_vmem_diff),.B({1'b0,gsyn}),.PRODUCT(output_current),.TC(1'b1));
 
 	always_ff @(posedge clk) begin
 		if (reset) begin

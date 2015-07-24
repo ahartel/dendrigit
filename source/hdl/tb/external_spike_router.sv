@@ -12,7 +12,7 @@ module external_spike_router #(
 )
 (
 	system_if.nn sys_if,
-	input logic spike_input[NUM_COLS],
+	spike_out_if.slave spike_input[NUM_COLS],
 	spike_in_if.master spike_output[NUM_SYNAPSE_ROWS],
 	spike_in_if.slave external_stimulus[NUM_SYNAPSE_ROWS]
 );
@@ -21,6 +21,7 @@ module external_spike_router #(
 	generate
 		for (genvar r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			assign spike_output[r].valid = external_stimulus[r].valid;
+			assign spike_output[r].on_off = external_stimulus[r].on_off;
 			assign spike_output[r].address = external_stimulus[r].address;
 		end
 	endgenerate
