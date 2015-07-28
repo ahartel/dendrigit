@@ -8,7 +8,7 @@ def options(opt):
 	opt.add_option('--with-coverage', action='store_true',
 			default=False,
 			help='Enable coverage data generation during simulation')
-	opt.add_option('--exp', action='store_true', default=True)
+	opt.add_option('--exp', action='store_true', default=False)
 	opt.add_option('--rect', action='store_true', default=False)
 
 def configure(conf):
@@ -74,6 +74,8 @@ def configure(conf):
 	elif conf.options.rect is False and conf.options.exp is True:
 		conf.end_msg('exp_syn')
 		conf.env['exp_not_rect'] = True
+	else:
+		raise Exception("You'll either have to choose the rectangular or the exponential implementation")
 
 
 def build(bld):

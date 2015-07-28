@@ -18,6 +18,7 @@ module synapse
 	config_if.master cfg_out,
 	input fp::fpType E_rev
 );
+	localparam right_shift_output_current = 9;
 
 	fp::fpType gsyn, weight, general_config;
 	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
@@ -39,10 +40,10 @@ module synapse
 			gsyn <= 0;
 		end
 		else begin
-			if (input_spike.valid && input_spike.address == address && input_spike.on_off = 1'b1) begin
+			if (input_spike.valid && input_spike.address == address && input_spike.on_off == 1'b1) begin
 				gsyn <= gsyn + weight;
 			end
-			else if (input_spike.valid && input_spike.address == address && input_spike.on_off = 1'b0) begin
+			else if (input_spike.valid && input_spike.address == address && input_spike.on_off == 1'b0) begin
 				gsyn <= gsyn - weight;
 			end
 		end
