@@ -12,7 +12,7 @@ module synapse
 )
 (
 	input logic clk, reset,
-	spike_in_if.slave input_spike,
+	spike_if.slave input_spike,
 	synapse_dendrite_if.synapse dendrite,
 	config_if.slave cfg_in,
 	config_if.master cfg_out,

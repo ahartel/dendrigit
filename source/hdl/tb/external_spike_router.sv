@@ -20,9 +20,10 @@ module external_spike_router #(
 	// just feed through for now
 	generate
 		for (genvar r=0;r<NUM_SYNAPSE_ROWS;r++) begin
-			assign spike_output[r].valid = external_stimulus[r].valid;
+
 			assign spike_output[r].on_off = external_stimulus[r].on_off;
 			assign spike_output[r].address = external_stimulus[r].address;
+			assign spike_output[r].valid = external_stimulus[r].valid;
 		end
 	endgenerate
 

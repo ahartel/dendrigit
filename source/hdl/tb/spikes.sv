@@ -1,9 +1,7 @@
 `ifndef SPIKES_IF
 `define SPIKES_IF
 
-class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=8);
-	virtual spike_in_if spike_in[NUM_SYNAPSE_ROWS];
-	virtual tb_clk_if tb_clk;
+class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 
 	class spike_t;
 		logic[NUM_SYNAPSE_ROWS-1:0] rows;
@@ -17,6 +15,7 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=8);
 			address = a;
 			width = 10;
 		endfunction
+
 	endclass
 
 	class spike_send_event_t;
@@ -33,13 +32,17 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=8);
 		endfunction
 	endclass
 
+	virtual spike_if spike_in[NUM_SYNAPSE_ROWS];
+	virtual tb_clk_if tb_clk;
 	spike_t spikes[$];
 	spike_send_event_t start_times[$], stop_times[$];
+	integer seed;
 
-	function new(virtual spike_in_if intf[NUM_SYNAPSE_ROWS], virtual tb_clk_if tbck);
+
+	function new(virtual spike_if intf[NUM_SYNAPSE_ROWS], virtual tb_clk_if tbck);
 		spike_in = intf;
 		tb_clk = tbck;
-
+		seed = $random;
 
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			spike_in[r].valid = 1'b0;
@@ -52,8 +55,27 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=8);
 		spikes.push_back(this_spike);
 	endfunction
 
+	function void append_poisson(time start, time stop, integer isi, logic[NUM_SYNAPSE_ROWS-1:0] input_rows, fp::fpType address);
+		spike_t this_spike;
+		time next_fire_time = start;
+		while (next_fire_time < stop) begin
+			if (next_fire_time > start) begin
+				this_spike = new(next_fire_time, input_rows, address);
+				spikes.push_back(this_spike);
+				$display("Appending spike at time %d",next_fire_time);
+			end
+			next_fire_time = next_fire_time + $dist_exponential(seed,isi);
+			$display("Next firing time: %d", next_fire_time);
+		end
+	endfunction
+
 	function void prepare_spikes();
 		spike_send_event_t append_spike;
+
+		spikes.sort() with (item.t);
+		//foreach (spikes[i]) begin
+			//$display("%d",spikes[i].t);
+		//end
 
 		foreach(spikes[i]) begin
 			append_spike = new(spikes[i].t,spikes[i].rows,spikes[i].address,1'b1);

@@ -1,9 +1,10 @@
 `include "params.sv"
+`include "shared_params.sv"
 `include "spikes.sv"
 
 module first_test();
 
-localparam NUM_SYNAPSE_ROWS = 2;
+localparam NUM_SYNAPSE_ROWS = 20;
 localparam NUM_COLS = 2;
 localparam WEIGHT_WIDTH = 6;
 
@@ -17,8 +18,8 @@ tb_clk_if tb_clk(fast_clk,slow_clk,reset);
 
 assign main_clk = tb_clk.start_fast_clock ? fast_clk : 1'b0;
 
-spike_in_if spike_in[NUM_SYNAPSE_ROWS]();
-spike_in_if router_spike_output[NUM_SYNAPSE_ROWS]();
+spike_if spike_in[NUM_SYNAPSE_ROWS]();
+spike_if router_spike_output[NUM_SYNAPSE_ROWS]();
 spike_out_if nn_spike_output[NUM_COLS]();
 
 config_if cfg_in[NUM_SYNAPSE_ROWS+1](),cfg_out[NUM_SYNAPSE_ROWS+1]();
@@ -27,18 +28,29 @@ neuron_params neuron_config[NUM_COLS];
 dendrite_params dendrite_config[NUM_SYNAPSE_ROWS][NUM_COLS];
 synapse_params synapse_config[NUM_SYNAPSE_ROWS][NUM_COLS*2];
 row_params row_config[NUM_SYNAPSE_ROWS];
-config_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) cfg_trans = new(cfg_in);
+config_transactor #(
+	.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),
+	.NUM_COLS(NUM_COLS),
+	.NUM_NEURON_PARAMS(4),
+	.NUM_SYNAPSE_PARAMS(2),
+	.NUM_DENDRITE_PARAMS(2),
+	.NUM_ROW_PARAMS(3)
+) cfg_trans = new(cfg_in);
+
 spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,tb_clk);
 
 initial begin
-	spike_trans.append_spike(50,1,0);
-	spike_trans.append_spike(55,1,1);
-	spike_trans.append_spike(60,1,2);
-	spike_trans.append_spike(65,1,3);
-	spike_trans.append_spike(70,1,4);
-	spike_trans.append_spike(75,1,5);
-	spike_trans.append_spike(100,2,0);
-	spike_trans.append_spike(150,3,1);
+	for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
+		spike_trans.append_poisson(0ns,1000ns,100,1<<r,16'h0000);
+	end
+	//spike_trans.append_spike(50,1,0);
+	//spike_trans.append_spike(55,1,1);
+	//spike_trans.append_spike(60,1,2);
+	//spike_trans.append_spike(65,1,3);
+	//spike_trans.append_spike(70,1,4);
+	//spike_trans.append_spike(75,1,5);
+	//spike_trans.append_spike(100,2,0);
+	//spike_trans.append_spike(150,3,1);
 end
 
 initial begin

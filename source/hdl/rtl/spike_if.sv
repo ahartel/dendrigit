@@ -1,8 +1,10 @@
 
-interface spike_in_if();
+interface spike_if();
+	parameter ADDRESS_WIDTH = 16;
+
 	logic valid;
 	logic on_off;
-	logic[7:0] address;
+	logic[ADDRESS_WIDTH-1:0] address;
 
 	modport slave (input valid, on_off, address);
 	modport master (output valid, on_off, address);

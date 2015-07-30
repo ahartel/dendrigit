@@ -1,4 +1,5 @@
 `include "params.sv"
+`include "shared_params.sv"
 `include "spikes.sv"
 
 module first_test();
@@ -17,8 +18,8 @@ tb_clk_if tb_clk(fast_clk,slow_clk,reset);
 
 assign main_clk = tb_clk.start_fast_clock ? fast_clk : 1'b0;
 
-spike_in_if spike_in[NUM_SYNAPSE_ROWS]();
-spike_in_if router_spike_output[NUM_SYNAPSE_ROWS]();
+spike_if spike_in[NUM_SYNAPSE_ROWS]();
+spike_if router_spike_output[NUM_SYNAPSE_ROWS]();
 spike_out_if nn_spike_output[NUM_COLS]();
 
 config_if cfg_in[NUM_SYNAPSE_ROWS+1](),cfg_out[NUM_SYNAPSE_ROWS+1]();
@@ -27,7 +28,15 @@ neuron_params neuron_config[NUM_COLS];
 dendrite_params dendrite_config[NUM_SYNAPSE_ROWS][NUM_COLS];
 synapse_params synapse_config[NUM_SYNAPSE_ROWS][NUM_COLS*2];
 row_params row_config[NUM_SYNAPSE_ROWS];
-config_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) cfg_trans = new(cfg_in);
+config_transactor #(
+	.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),
+	.NUM_COLS(NUM_COLS),
+	.NUM_NEURON_PARAMS(4),
+	.NUM_SYNAPSE_PARAMS(3),
+	.NUM_DENDRITE_PARAMS(2),
+	.NUM_ROW_PARAMS(3)
+) cfg_trans = new(cfg_in);
+
 spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,tb_clk);
 
 initial begin
