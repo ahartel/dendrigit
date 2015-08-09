@@ -43,7 +43,7 @@ module synapse
 			if (input_spike.valid && input_spike.address == address && input_spike.on_off == 1'b1) begin
 				gsyn <= gsyn + weight;
 			end
-			else if (input_spike.valid && input_spike.address == address && input_spike.on_off == 1'b0) begin
+			else if (input_spike.valid && input_spike.address == address && input_spike.on_off == 1'b0 && gsyn > 0) begin
 				gsyn <= gsyn - weight;
 			end
 		end

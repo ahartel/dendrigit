@@ -4,7 +4,7 @@
 
 module first_test();
 
-localparam NUM_SYNAPSE_ROWS = 20;
+localparam NUM_SYNAPSE_ROWS = 2;
 localparam NUM_COLS = 2;
 localparam WEIGHT_WIDTH = 6;
 
@@ -41,7 +41,9 @@ spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_
 
 initial begin
 	for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
-		spike_trans.append_poisson(0ns,1000ns,100,1<<r,16'h0000);
+		for (integer c=0; c<NUM_COLS; c++) begin
+			spike_trans.append_poisson(0ns,100000ns,100,1<<r,c*2);
+		end
 	end
 	//spike_trans.append_spike(50,1,0);
 	//spike_trans.append_spike(55,1,1);
@@ -58,21 +60,21 @@ initial begin
 		neuron_config[c] = new();
 		neuron_config[c].set_E_l(-60);
 		neuron_config[c].set_tau_mem(20);
-		neuron_config[c].set_v_thresh(-50);
+		neuron_config[c].set_v_thresh(-45);
 		neuron_config[c].set(3,10);
-		for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
+		for (integer r=0; r<NUM_SYNAPSE_ROWS; r=r+1) begin
 			row_config[r] = new();
 			row_config[r].set_bio(0,-60);
 			row_config[r].set_bio(1,-10);
 
 			synapse_config[r][c*2+0] = new();
 			//synapse_config[r][c*2+0].set_bio(0,-10);
-			synapse_config[r][c*2+0].set(0,32);
+			synapse_config[r][c*2+0].set(0,32); //weight
 			synapse_config[r][c*2+0].set_address(c*2+0);
 
 			synapse_config[r][c*2+1] = new();
 			//synapse_config[r][c*2+1].set_bio(0,-10);
-			synapse_config[r][c*2+1].set(0,32);
+			synapse_config[r][c*2+1].set(0,32); //weight
 			synapse_config[r][c*2+1].set_address(c*2+1);
 
 			dendrite_config[r][c] = new();
@@ -80,6 +82,12 @@ initial begin
 			dendrite_config[r][c].set_bio(0,20); // tau_mem
 			dendrite_config[r][c].set_bio(1,0.1); // g_int
 		end
+		for (integer r=1; r<NUM_SYNAPSE_ROWS; r=r+2) begin
+			row_config[r].set_bio(1,-70);
+			synapse_config[r][c*2+0].set(0,16); //weight
+			synapse_config[r][c*2+1].set(0,16); //weight
+		end
+
 	end
 end
 
