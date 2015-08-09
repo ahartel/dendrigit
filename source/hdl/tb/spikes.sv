@@ -62,10 +62,10 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 			if (next_fire_time > start) begin
 				this_spike = new(next_fire_time, input_rows, address);
 				spikes.push_back(this_spike);
-				$display("Appending spike at time %d",next_fire_time);
+				//$display("Appending spike at time %d",next_fire_time);
 			end
 			next_fire_time = next_fire_time + $dist_exponential(seed,isi);
-			$display("Next firing time: %d", next_fire_time);
+			//$display("Next firing time: %d", next_fire_time);
 		end
 	endfunction
 
@@ -73,9 +73,6 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 		spike_send_event_t append_spike;
 
 		spikes.sort() with (item.t);
-		//foreach (spikes[i]) begin
-			//$display("%d",spikes[i].t);
-		//end
 
 		foreach(spikes[i]) begin
 			append_spike = new(spikes[i].t,spikes[i].rows,spikes[i].address,1'b1);
@@ -83,6 +80,12 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 			append_spike = new(spikes[i].t+spikes[i].width,spikes[i].rows,spikes[i].address,1'b0);
 			stop_times.push_back(append_spike);
 		end
+		//foreach (start_times[i]) begin
+			//$display("%d",start_times[i].t);
+		//end
+		//foreach (stop_times[i]) begin
+			//$display("%d",stop_times[i].t);
+		//end
 
 	endfunction
 
@@ -92,6 +95,7 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 	endfunction
 
 	function void send_spike(spike_send_event_t this_spike);
+		//$display("Sending spike @%d",$time);
 		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
 			spike_in[r].valid = this_spike.rows[r];
 			spike_in[r].address = this_spike.address;
@@ -108,18 +112,24 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 
 		while(start_times.size() > 0 || stop_times.size() > 0) begin
 			if (start_times.size() == 0) begin
-				if (stop_times[0].t == t) begin
+				//$display("Start times empty");
+				//$display("Stop times[0].t=%d @t=%d",stop_times[0].t,t);
+				if (stop_times[0].t <= t) begin
 					// send stop spike
-					send_spike(stop_times.pop_front());
+					while (stop_times.size() > 0 && stop_times[0].t <= t) begin
+						send_spike(stop_times.pop_front());
+					end
 				end
 				else begin
 					no_spike();
 				end
 			end
 			else if (stop_times.size() == 0) begin
-				if (start_times[0].t == t) begin
+				if (start_times[0].t <= t) begin
 					// send start spike
-					send_spike(start_times.pop_front());
+					while (start_times.size() > 0 && start_times[0].t <= t) begin
+						send_spike(start_times.pop_front());
+					end
 				end
 				else begin
 					no_spike();
@@ -128,19 +138,27 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 			else begin
 				if (start_times[0].t <= t && stop_times[0].t > t) begin
 					// send start spike
-					send_spike(start_times.pop_front());
+					while (start_times.size() > 0 && start_times[0].t <= t) begin
+						send_spike(start_times.pop_front());
+					end
 				end
 				else if (start_times[0].t <= t && stop_times[0].t <= t && last_sent_start == 1'b0) begin
 					// send start spike
-					send_spike(start_times.pop_front());
+					while (start_times.size() > 0 && start_times[0].t <= t) begin
+						send_spike(start_times.pop_front());
+					end
 				end
 				else if (start_times[0].t > t && stop_times[0].t <= t) begin
 					// send stop spike
-					send_spike(stop_times.pop_front());
+					while (stop_times.size() > 0 && stop_times[0].t <= t) begin
+						send_spike(stop_times.pop_front());
+					end
 				end
 				else if (start_times[0].t <= t && stop_times[0].t <= t && last_sent_start == 1'b1) begin
 					// send stop spike
-					send_spike(stop_times.pop_front());
+					while (stop_times.size() > 0 && stop_times[0].t <= t) begin
+						send_spike(stop_times.pop_front());
+					end
 				end
 				else begin
 					no_spike();
@@ -154,6 +172,7 @@ class spike_transactor #(NUM_SYNAPSE_ROWS=1,ADDR_WIDTH=16);
 			spike_in[r].valid = 1'b0;
 
 		@(posedge tb_clk.fast_clk);
+		$display("Done sending spikes @%d",$time);
 	endtask
 
 endclass
