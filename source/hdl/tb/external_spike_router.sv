@@ -14,10 +14,10 @@ module external_spike_router #(
 	system_if.nn sys_if,
 	spike_out_if.slave spike_input[NUM_COLS],
 	spike_if.master spike_output[NUM_SYNAPSE_ROWS],
-	spike_if.slave external_stimulus[NUM_SYNAPSE_ROWS]
+	spike_if.slave external_stimulus[NUM_SYNAPSE_ROWS],
+	input logic[7:0] connections[NUM_SYNAPSE_ROWS][NUM_COLS]
 );
 
-	logic[7:0] connections[NUM_SYNAPSE_ROWS][NUM_COLS];
 	logic out_valids[NUM_COLS], out_on_offs[NUM_COLS];
 
 	spike_if spike_feedback[NUM_SYNAPSE_ROWS]();
@@ -30,15 +30,6 @@ module external_spike_router #(
 		end
 	endgenerate
 
-	initial begin
-		for (integer r=0;r<NUM_SYNAPSE_ROWS;r++) begin
-			for (integer c=0; c<NUM_COLS; c++) begin
-				connections[r][c] = 0;
-			end
-		end
-		connections[0][1] = 1;
-		connections[0][0] = 3;
-	end
 
 
 	generate

@@ -45,7 +45,7 @@ class dendrite_params;
 
 	function void set_bio(integer p, real value);
 		if (p==0) begin
-			$display("Setting tau_mem to %d with scale factor %d. %f,%f",shortint'(1.0/value*TAU_MEM_SCALE),TAU_MEM_SCALE,1.0/value*TAU_MEM_SCALE,value);
+			//$display("Setting tau_mem to %d with scale factor %d. %f,%f",shortint'(1.0/value*TAU_MEM_SCALE),TAU_MEM_SCALE,1.0/value*TAU_MEM_SCALE,value);
 			tau_mem = shortint'(1.0/value*TAU_MEM_SCALE);
 		end
 		else if (p==1)
@@ -61,9 +61,10 @@ class dendrite_params;
 endclass
 
 class neuron_params;
-	fp::fpType tau_mem, tau_ref, E_l, v_thresh;
+	fp::fpType tau_mem, tau_ref, E_l, v_thresh,fixed_current;
 
 	localparam logic[15:0] EL_SCALE = 64;
+	localparam logic[15:0] CURRENT_SCALE = 64;
 	localparam logic[15:0] VT_SCALE = 64;
 	localparam logic[15:0] TAU_MEM_SCALE = 32768;
 	localparam logic[15:0] TAU_REF_SCALE = 32768;
@@ -73,6 +74,7 @@ class neuron_params;
 		tau_ref = 0;
 		E_l = 0;
 		v_thresh = 0;
+		fixed_current = 0;
 	endfunction
 
 	function void set(integer p, fp::fpType value);
@@ -84,19 +86,23 @@ class neuron_params;
 			v_thresh = value;
 		else if (p==3)
 			tau_ref = value;
+		else if (p==4)
+			fixed_current = value;
 	endfunction
 
 	function void set_bio(integer p, real value);
 		if (p==0)
 			E_l = shortint'(value*EL_SCALE);
 		else if (p==1) begin
-			$display("Setting tau_mem to %d with scale factor %d. %f,%f",shortint'(1.0/value*TAU_MEM_SCALE),TAU_MEM_SCALE,1.0/value*TAU_MEM_SCALE,value);
+			//$display("Setting tau_mem to %d with scale factor %d. %f,%f",shortint'(1.0/value*TAU_MEM_SCALE),TAU_MEM_SCALE,1.0/value*TAU_MEM_SCALE,value);
 			tau_mem = shortint'(1.0/value*TAU_MEM_SCALE);
 		end
 		else if (p==2)
 			v_thresh = shortint'(value*VT_SCALE);
 		else if (p==3)
 			tau_ref = shortint'(value*TAU_REF_SCALE);
+		else if (p==4)
+			fixed_current = shortint'(value*CURRENT_SCALE);
 	endfunction
 
 	function fp::fpType get(integer p);
@@ -108,6 +114,8 @@ class neuron_params;
 			return v_thresh;
 		else if (p==3)
 			return tau_ref;
+		else if (p==4)
+			return fixed_current;
 	endfunction
 
 	function void set_tau_mem(real value);
@@ -122,6 +130,10 @@ class neuron_params;
 		set_bio(0,value);
 	endfunction
 
+	function void set_fixed_current(real value);
+		set_bio(4,value);
+	endfunction
+
 	function fp::fpType get_tau_mem();
 		return get(1);
 	endfunction
@@ -130,7 +142,7 @@ endclass
 class config_transactor #(
 		NUM_SYNAPSE_ROWS=1,
 		NUM_COLS=1,
-		NUM_NEURON_PARAMS=4,
+		NUM_NEURON_PARAMS=5,
 		NUM_SYNAPSE_PARAMS=2,
 		NUM_DENDRITE_PARAMS=2,
 		NUM_ROW_PARAMS=3
@@ -157,7 +169,7 @@ class config_transactor #(
 				#2;
 			end
 		end
-		$display("Done configuring neurons @(%d)",$time);
+		//$display("Done configuring neurons @(%d)",$time);
 	endtask
 
 	task write_synapse_dendrite_config(row_params rows[NUM_SYNAPSE_ROWS], dendrite_params dendr[NUM_SYNAPSE_ROWS][NUM_COLS], synapse_params syn[NUM_SYNAPSE_ROWS][NUM_COLS*2]);

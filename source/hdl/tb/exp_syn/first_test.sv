@@ -31,10 +31,7 @@ row_params row_config[NUM_SYNAPSE_ROWS];
 config_transactor #(
 	.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),
 	.NUM_COLS(NUM_COLS),
-	.NUM_NEURON_PARAMS(4),
-	.NUM_SYNAPSE_PARAMS(3),
-	.NUM_DENDRITE_PARAMS(2),
-	.NUM_ROW_PARAMS(3)
+	.NUM_SYNAPSE_PARAMS(3)
 ) cfg_trans = new(cfg_in);
 
 spike_transactor #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS)) spike_trans = new(spike_in,tb_clk);

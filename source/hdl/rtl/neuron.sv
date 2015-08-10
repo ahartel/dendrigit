@@ -20,14 +20,15 @@ module neuron
 	localparam right_shift_decay_vmem = 15;
 
 	// parameter registers
-	fp::fpType E_l, tau_mem, v_thresh, tau_ref;
+	fp::fpType E_l, tau_mem, v_thresh, tau_ref, fixed_current;
 	// intermediate results
-	fp::fpType E_l_vmem_diff, decay_vmem_shifted, new_vmem, vmem_decay_leak;
+	fp::fpType E_l_vmem_diff, decay_vmem_shifted, new_vmem, vmem_decay_leak, vmem_before_current;
 	logic[fp::WORD_LENGTH*2+1-1:0] decay_vmem;
 	// carries
-	logic carry_add_all;
+	logic carry_add_upper,carry_add_leak;
 	// refractory flag
 	logic tauref_counter_hit, refractory, super_thresh;
+	logic [COUNTER_WIDTH-1:0] tauref_counter;
 
 	assign decay_vmem_shifted = (decay_vmem>>right_shift_decay_vmem)&16'hffff;
 
@@ -37,7 +38,8 @@ module neuron
 		tau_mem <= E_l;
 		v_thresh <= tau_mem;
 		tau_ref <= v_thresh;
-		cfg_out.data_in <= tau_ref;
+		fixed_current <= tau_ref;
+		cfg_out.data_in <= fixed_current;
 	end
 
 	// TC
@@ -59,7 +61,7 @@ module neuron
 	DW01_add #(.width(fp::WORD_LENGTH)) add_leak_current (
 		.A(vmem),
 		.B(decay_vmem_shifted),
-		.CO(carry_add_all),
+		.CO(carry_add_leak),
 		.CI(1'b0),
 		.SUM(vmem_decay_leak)
 	);
@@ -67,10 +69,19 @@ module neuron
 	DW01_add #(.width(fp::WORD_LENGTH)) add_upper (
 		.A(vmem_decay_leak),
 		.B(dendrite_current),
+		.CO(carry_add_upper),
+		.CI(carry_add_leak),
+		.SUM(vmem_before_current)
+	);
+
+	DW01_add #(.width(fp::WORD_LENGTH)) add_current_source (
+		.A(vmem_before_current),
+		.B(fixed_current),
+		.CI(carry_add_upper),
 		.CO(),
-		.CI(carry_add_all),
 		.SUM(new_vmem)
 	);
+
 
 	// store latest calculation result
 	always_ff @(posedge clk) begin
@@ -102,15 +113,13 @@ module neuron
 			output_spike.valid <= 1'b0;
 		end
 		else begin
-			if (output_spike.valid == 1'b0 && (refractory == 1'b0 || tauref_counter_hit == 1'b1)) begin
-				if (tauref_counter_hit) begin
-					output_spike.valid <= 1'b1;
-					output_spike.on_off <= 1'b0;
-				end
-				else if (super_thresh) begin
-					output_spike.valid <= 1'b1;
-					output_spike.on_off <= 1'b1;
-				end
+			if (refractory && tauref_counter_hit) begin
+				output_spike.valid <= 1'b1;
+				output_spike.on_off <= 1'b0;
+			end
+			else if (!refractory && super_thresh) begin
+				output_spike.valid <= 1'b1;
+				output_spike.on_off <= 1'b1;
 			end
 			else begin
 				output_spike.valid <= 1'b0;
@@ -118,15 +127,13 @@ module neuron
 		end
 	end
 
-	logic [COUNTER_WIDTH-1:0] tauref_counter;
-
-	assign refractory = tauref_counter > 0;
+	assign tauref_counter_hit = (tau_ref-1==tauref_counter);
+	assign refractory = ((output_spike.valid && output_spike.on_off) || tauref_counter_hit || (tauref_counter > 0));
 
 	// tauref_counter
 	always_ff @(posedge clk) begin
 		if (reset) begin
 			tauref_counter <= 0;
-			tauref_counter_hit <= 1'b0;
 		end
 		else begin
 			if (tauref_counter == 0) begin
@@ -134,19 +141,12 @@ module neuron
 					tauref_counter <= tauref_counter + 1;
 			end
 			else if (tauref_counter == tau_ref-1) begin
-				tauref_counter_hit <= 1'b1;
-				tauref_counter <= tauref_counter + 1;
-			end
-			else if (tauref_counter == tau_ref) begin
 				tauref_counter <= 0;
 			end
 			else begin
 				tauref_counter <= tauref_counter + 1;
 			end
 
-			if (tauref_counter_hit) begin
-				tauref_counter_hit <= 1'b0;
-			end
 		end
 	end
 
