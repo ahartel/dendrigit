@@ -14,13 +14,15 @@ module dendrite(
 );
 
 	localparam right_shift_decay_vmem = 15;
-	localparam right_shift_lower_current = 16;
+	// a membrane difference multiplied by a conductances,
+	// i.e. U(7,9) * A(8,7) and it will be added to a voltage again
+	localparam right_shift_lower_current = 9;
 
 	// neuron model parameters
 	//fp::fpType E_l;
 	fp::fpType tau_mem, g_int;
 
-	logic synadd_co, carry_add_vmem, carry_add_all;
+	logic carry_synadd, carry_add_vmem, carry_add_all;
 	fp::fpType vmem, sum_syn_current, new_vmem, vmem_synin, vmem_decay_synin;
 	logic[fp::WORD_LENGTH*2+1-1:0] decay_vmem, current_to_lower;
 	fp::fpType E_l_vmem_diff, decay_vmem_shifted, compartment_difference;
@@ -43,14 +45,14 @@ module dendrite(
 		.A(synapse0.output_current),
 		.B(synapse1.output_current),
 		.CI(1'b0),
-		.CO(synadd_co),
+		.CO(carry_synadd),
 		.SUM(sum_syn_current)
 	);
 	DW01_add #(.width(fp::WORD_LENGTH)) add_vmem (
 		.A(sum_syn_current),
 		.B(vmem),
 		.CO(carry_add_vmem),
-		.CI(synadd_co),
+		.CI(carry_synadd),
 		.SUM(vmem_synin)
 	);
 

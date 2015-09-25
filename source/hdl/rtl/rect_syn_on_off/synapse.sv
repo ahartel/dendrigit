@@ -7,8 +7,6 @@
 
 module synapse
 #(
-	parameter WEIGHT_WIDTH = 6,
-	parameter WEIGHT = 128
 )
 (
 	input logic clk, reset,
@@ -16,13 +14,17 @@ module synapse
 	synapse_dendrite_if.synapse dendrite,
 	config_if.slave cfg_in,
 	config_if.master cfg_out,
-	input fp::fpType E_rev
+	input fp::fpType E_rev,
+	input fp::fpType stdp_amplitude,
+	input fp::fpType stdp_timeconst,
+	spike_out_if.slave post
 );
 	localparam right_shift_output_current = 9;
 
-	fp::fpType gsyn, weight, general_config;
+	fp::fpType gsyn, weight, general_config, delta_w;
 	logic[fp::WORD_LENGTH*2+1-1:0] output_current;
 	logic[7:0] address;
+	logic change_weight;
 
 	assign address = general_config[7:0];
 
@@ -48,6 +50,18 @@ module synapse
 			end
 		end
 	end
+
+	stdp_circuit stdp(
+		.clk,
+		.change_weight,
+		.delta_w,
+		.weight,
+		.stdp_amplitude,
+		.stdp_timeconst,
+		.pre(input_spike.valid && input_spike.address == address &&
+			 input_spike.on_off == 1'b1),
+		.post(post.valid && post.on_off)
+	);
 
 	synapse_to_dendrite_current syn_to_den(
 		.E_rev(E_rev),

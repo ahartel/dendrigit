@@ -4,6 +4,8 @@ module row_global_parameters(
 	config_if.master cfg_out,
 	output fp::fpType E_rev,
 	output fp::fpType E_l,
+	output fp::fpType stdp_amplitude,
+	output fp::fpType stdp_timeconst,
 	spike_if.slave spike_in,
 	spike_if.master spike_out
 );
@@ -15,7 +17,9 @@ module row_global_parameters(
 		E_l <= cfg_in.data_in;
 		E_rev <= E_l;
 		address <= E_rev;
-		cfg_out.data_in <= address;
+		stdp_amplitude <= address;
+		stdp_timeconst <= stdp_amplitude;
+		cfg_out.data_in <= stdp_timeconst;
 	end
 
 	assign spike_out.on_off = spike_in.on_off;

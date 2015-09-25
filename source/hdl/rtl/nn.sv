@@ -25,7 +25,8 @@ module nn #(
 				.cfg_in(cfg_in[j]),
 				.upper(dendr_nrn_if[j]),
 				.lower(dendr_nrn_if[j+1]),
-				.spike_input(input_spike[j])
+				.spike_input(input_spike[j]),
+				.post_spikes(output_spike.slave)
 			);
 		end
 	endgenerate
@@ -56,10 +57,11 @@ module synapse_row #(
 	config_if cfg_in,
 	dendrite_neuron_if upper,
 	dendrite_neuron_if lower,
-	spike_if spike_input
+	spike_if spike_input,
+	spike_out_if.slave post_spikes[NUM_COLS]
 );
 
-	fp::fpType E_rev, E_l;
+	fp::fpType E_rev, E_l, stdp_amplitude, stdp_timeconst;
 	config_if cfg_syn[3*NUM_COLS+1]();
 	config_if global_config_if();
 	assign cfg_syn[0].data_in = global_config_if.data_in;
@@ -73,6 +75,8 @@ module synapse_row #(
 		.cfg_out(global_config_if),
 		.E_rev(E_rev),
 		.E_l(E_l),
+		.stdp_amplitude(stdp_amplitude),
+		.stdp_timeconst(stdp_timeconst),
 		.spike_in(spike_input),
 		.spike_out(spike_to_synapses)
 	);
@@ -85,7 +89,10 @@ module synapse_row #(
 				.dendrite(synapse_if[2*j]),
 				.cfg_in(cfg_syn[3*j]),
 				.cfg_out(cfg_syn[3*j+1]),
-				.E_rev
+				.E_rev,
+				.stdp_amplitude,
+				.stdp_timeconst,
+				.post(post_spikes[j])
 			);
 			synapse synapse_1 (
 				.clk(sys_if.main_clk), .reset(sys_if.reset),
@@ -93,7 +100,10 @@ module synapse_row #(
 				.dendrite(synapse_if[2*j+1]),
 				.cfg_in(cfg_syn[3*j+2]),
 				.cfg_out(cfg_syn[3*j+3]),
-				.E_rev
+				.E_rev,
+				.stdp_amplitude,
+				.stdp_timeconst,
+				.post(post_spikes[j])
 			);
 
 

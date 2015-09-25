@@ -1,20 +1,35 @@
 class row_params;
-	localparam logic[15:0] EL_SCALE = 64;
+	localparam logic[15:0] EL_SCALE = 128;
 	fp::fpType El;
 	fp::fpType Esyn;
 	fp::fpType address;
+	fp::fpType stdp_amplitude;
+	fp::fpType stdp_timeconst;
 
 	function new();
 		El = 0;
 		Esyn = 0;
 		address = 0;
+        stdp_amplitude = 0;
+        stdp_timeconst = 0;
 	endfunction
+
+	function void set(integer p, real value);
+		if (p==0)
+			El = value;
+		else if (p==1)
+			Esyn = value;
+		else if (p==3)
+			stdp_amplitude = value;
+		else if (p==4)
+			stdp_timeconst = value;
+    endfunction
 
 	function void set_bio(integer p, real value);
 		if (p==0)
-			El = shortint'(value*EL_SCALE);
+			set(p,shortint'(value*EL_SCALE));
 		else if (p==1)
-			Esyn = shortint'(value*EL_SCALE);
+			set(p,shortint'(value*EL_SCALE));
 	endfunction
 
 	function fp::fpType get(integer p);
@@ -24,6 +39,10 @@ class row_params;
 			return Esyn;
 		else if (p==2)
 			return address;
+		else if (p==3)
+			return stdp_amplitude;
+		else if (p==4)
+			return stdp_timeconst;
 	endfunction
 
 	function void set_address(logic[7:0] addr);
@@ -36,7 +55,7 @@ class dendrite_params;
 	fp::fpType g_int;
 
 	localparam logic[15:0] TAU_MEM_SCALE = 32768;
-	localparam logic[16:0] G_INT_SCALE = 65536;
+	localparam logic[16:0] G_INT_SCALE = 512;
 
 	function new();
 		tau_mem = 0;
@@ -63,9 +82,9 @@ endclass
 class neuron_params;
 	fp::fpType tau_mem, tau_ref, E_l, v_thresh,fixed_current;
 
-	localparam logic[15:0] EL_SCALE = 64;
-	localparam logic[15:0] CURRENT_SCALE = 64;
-	localparam logic[15:0] VT_SCALE = 64;
+	localparam logic[15:0] EL_SCALE = 128;
+	localparam logic[15:0] CURRENT_SCALE = 128;
+	localparam logic[15:0] VT_SCALE = 128;
 	localparam logic[15:0] TAU_MEM_SCALE = 32768;
 	localparam logic[15:0] TAU_REF_SCALE = 32768;
 
@@ -145,7 +164,7 @@ class config_transactor #(
 		NUM_NEURON_PARAMS=5,
 		NUM_SYNAPSE_PARAMS=2,
 		NUM_DENDRITE_PARAMS=2,
-		NUM_ROW_PARAMS=3
+		NUM_ROW_PARAMS=5
 	);
 	virtual config_if cfg_if[NUM_SYNAPSE_ROWS+1];
 

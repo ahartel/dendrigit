@@ -5,7 +5,7 @@ class synapse_params;
 	fp::fpType gl_jump;
 	fp::fpType general_config;
 
-	localparam logic[15:0] GL_JUMP_SCALE = 1;
+	localparam logic[15:0] GL_JUMP_SCALE = 512;
 	localparam logic[15:0] TAU_GL_SCALE = 32768;
 
 	function new();
