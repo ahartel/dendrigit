@@ -1,7 +1,7 @@
 `include "basic_test_class.sv"
 typedef real rates_queue[$];
 
-class measure_activation_function extends basic_test_class;
+class spikes_from_file extends basic_test_class;
 	time start_times[$];
 
 	function new(virtual system_if sys_if,
@@ -18,8 +18,7 @@ class measure_activation_function extends basic_test_class;
 		integer off_spikes[$]
 	);
 		real rates[$];
-		time previous_start_time, start_time;
-		integer spike_count;
+		integer previous_start_time, start_time, spike_count;
 
 		$display("Number of on-spikes : %d",on_spikes.size());
 		$display("Number of off-spikes: %d",off_spikes.size());
@@ -49,6 +48,31 @@ class measure_activation_function extends basic_test_class;
 		return rates;
 	endfunction
 
+	function void load_spikes_from_file();
+		integer               data_file    ; // file handler
+		integer               scan_file    ; // file handler
+		int synapse;
+		real timestamp;
+		`define NULL 0
+
+		data_file = $fopen("../sim_spikes.dat", "r");
+		if (data_file == `NULL) begin
+			$display("data_file handle was NULL");
+			$finish;
+		end
+
+		while (1) begin
+		  scan_file = $fscanf(data_file, "%f,%f\n", synapse, timestamp);
+		  if (!$feof(data_file)) begin
+			$display("Loading spike at time %d for synapse #%d",
+					 int'(timestamp*1000.0),int'(synapse));
+			spike_trans.append_spike(timestamp*1000.0,1<<int'(synapse/2),synapse%2);
+		  end
+		  else break;
+		end
+		$fclose(data_file);
+	endfunction
+
 	function void prepare();
 
 		/*
@@ -60,14 +84,7 @@ class measure_activation_function extends basic_test_class;
 			end
 		end
 
-		//spike_trans.append_spike(50,1,0);
-		//spike_trans.append_spike(55,1,1);
-		//spike_trans.append_spike(60,1,2);
-		//spike_trans.append_spike(65,1,3);
-		//spike_trans.append_spike(70,1,4);
-		//spike_trans.append_spike(75,1,5);
-		//spike_trans.append_spike(100,2,0);
-		//spike_trans.append_spike(150,3,1);
+		load_spikes_from_file();
 
 		/*
 		// Set up configuration of neurons and synapses
@@ -122,32 +139,10 @@ class measure_activation_function extends basic_test_class;
 		#2us;
 		sys_if.reset = 1'b0;
 		#2us;
-		tb_clk.start_fast_clock = 1'b1;
 		cfg_trans.write_synapse_dendrite_config(row_config,dendrite_config,synapse_config);
-		/*
-		// run the loop to measure the activation function
-		*/
-		for (real current=3.5; current<5.5; current=current+0.05) begin
-			/*
-			// Generate input poisson spike train
-			*/
-			void'(spike_trans.clear_all());
-			for (integer r=0; r<NUM_SYNAPSE_ROWS; r++) begin
-				for (integer c=0; c<NUM_COLS; c++) begin
-					spike_trans.append_poisson(0ns,100us,100,1<<r,c*2);
-				end
-			end
-
-			for (integer c=0; c<NUM_COLS; c++) begin
-				neuron_config[c].set_fixed_current(current);
-			end
-			cfg_trans.write_neuron_config(neuron_config);
-			start_times.push_back($time);
-			$display("Setting fixed current to %f, starting @%d",
-					 current,start_times[$]);
-			spike_trans.send_spikes();
-			#10us;
-		end
+		cfg_trans.write_neuron_config(neuron_config);
+		tb_clk.start_fast_clock = 1'b1;
+		spike_trans.send_spikes();
 
 	endtask
 
@@ -160,5 +155,6 @@ class measure_activation_function extends basic_test_class;
 			$fdisplay(fh,"%f",rates[i]);
 		end
 		$fclose(fh);
+		$finish();
 	endfunction
 endclass

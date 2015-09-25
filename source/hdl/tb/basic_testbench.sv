@@ -1,10 +1,12 @@
-parameter NUM_SYNAPSE_ROWS = 2;
-parameter NUM_COLS = 1;
+parameter NUM_SYNAPSE_ROWS = 256+1;
+parameter NUM_COLS = 48;
+//parameter NUM_SYNAPSE_ROWS = 4;
+//parameter NUM_COLS = 1;
 
 `include "params.sv"
 `include "shared_params.sv"
-`include "measure_activation_function.sv"
-
+//`include "measure_activation_function.sv"
+`include "spikes_from_file.sv"
 
 module basic_testbench();
 
@@ -24,7 +26,7 @@ module basic_testbench();
 	connection_if #(.NUM_SYNAPSE_ROWS(NUM_SYNAPSE_ROWS),.NUM_COLS(NUM_COLS)) connections();
 	config_if cfg_in[NUM_SYNAPSE_ROWS+1](),cfg_out[NUM_SYNAPSE_ROWS+1]();
 
-	measure_activation_function testclass = new(sys_if,
+	spikes_from_file testclass = new(sys_if,
                                                 tb_clk,
 												cfg_in,
 												spike_in,
@@ -36,6 +38,7 @@ module basic_testbench();
 		testclass.prepare();
 		testclass.test();
         testclass.evaluate(on_spikes,off_spikes);
+		$finish();
 	end
 
 	always begin

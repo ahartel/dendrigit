@@ -5,9 +5,8 @@ from waflib import Logs
 top = '../../'
 
 def options(opt):
-	opt.add_option('--with-coverage', action='store_true',
-			default=False,
-			help='Enable coverage data generation during simulation')
+	# opt.add_option('--include', action='store',
+			# help='File to include for testbench')
 	opt.add_option('--exp', action='store_true', default=False)
 	opt.add_option('--rect', action='store_true', default=False)
 
@@ -27,6 +26,7 @@ def configure(conf):
 			[
 				'-nocopyright',
 				'-linedebug',
+				# '-define', 'TB_INCLUDE="'+conf.options.include+'"',
 			]
 	)
 	conf.env['NCELAB_OPTIONS'].extend(
@@ -51,15 +51,15 @@ def configure(conf):
                 '-gui',
 			])
 
-	conf.start_msg('Enabling coverage data generation?')
-	if conf.options.with_coverage:
-		conf.end_msg('yes')
-		conf.env['NCELAB_OPTIONS'].extend([
-			'-coverage', 'A',   # enable all coverage instrumentation
-			'-covdut', 'Top_miniasic_0',
-		])
-	else:
-		conf.end_msg('no')
+	# conf.start_msg('Enabling coverage data generation?')
+	# if conf.options.with_coverage:
+		# conf.end_msg('yes')
+		# conf.env['NCELAB_OPTIONS'].extend([
+			# '-coverage', 'A',   # enable all coverage instrumentation
+			# '-covdut', 'Top_miniasic_0',
+		# ])
+	# else:
+		# conf.end_msg('no')
 
 	conf.start_msg('Looking for Synopsys DesginWare IP library')
 	conf.env['DESIGNWARE_PATH'] = conf.root.find_dir(os.environ['SYNOPSYS'] + '/dw/sim_ver').abspath()
