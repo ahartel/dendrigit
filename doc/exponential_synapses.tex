@@ -1,0 +1,29 @@
+\chapter{Implementation with exponential conductance synapses}
+\section{Synapse}
+\subsection{Ports}
+	\begin{itemize}
+		\item \texttt{input logic} $input_spike$
+		\item \texttt{input fpType} $V_{mem}$
+		\item \texttt{output fpType} $I_{out}$
+	\end{itemize}
+\subsection{Arithmetic elements}
+\begin{itemize}
+	\item MULTIPLIER for syn. conductance and syn. time constant
+		\begin{equation}
+			g_{syn}^{decay} = g_{syn} \cdot \tau_{syn}^{-1}
+		\end{equation}
+	\item SUBTRACTOR for diff. of reversal potential and membrane potential
+		\begin{equation}
+			V_{mem,rev}^{diff} = E_{rev} - V_{mem}
+		\end{equation}
+	\item MULTIPLIER of difference of potentials and momentary conductance
+		\begin{equation}
+			I_{syn} = g_{syn} \cdot V_{mem,rev}^{diff}
+		\end{equation}
+\end{itemize}
+\subsection{Parameters}
+\begin{tabular}{ll}
+$E_{rev}$ & $A(9,6)$\\
+$g_l^{jump}$ & $U(7,9)$\\
+$\tau_{syn}^{-1}$ & $U(1,15)$\\
+\end{tabular}

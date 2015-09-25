@@ -1,0 +1,44 @@
+\chapter{Some notes about Fixed Point Numbers}
+\section{General Remarks}
+Baden uses 16 bit fixed point numbers. With 16 bits one can represent the
+integer numbers from 0 to 65,535.
+
+The different representations are symbolized by the following notations:
+\begin{itemize}
+	\item Unsigned fixed point number with $a$ bits before and $b$ bits after the
+	comma: $U(a,b)$ ($a+b$ bits in total). The range of $U(a,b)$ is $0 <
+	x < 2^a-2^-b$. The value of the represented number can be calculated via $x =
+	\left(\frac{1}{2^b}\right)\sum^{N-1}_{n=0} 2^n x_n$
+	\item Signed fixed point number with $a$ bits before and $b$ bits after the
+	comma: $A(a,b)$ ($a+b+1$ bits in total). The range of $A(a,b)$ is $-2^a <
+	x < 2^a-2^-b$. The value of the represented number can be calculated
+	via $x = \left(\frac{1}{2^b}\right)\left[-2^{N-1}x_{N-1}+\sum^{N-2}_{0}2^n
+	x_n\right]$
+\end{itemize}
+
+See \url{www.digitalsignallabs.com/fp.pdf}.
+
+\section{Used representations}
+The following representations are used for the modules in this chip:
+\begin{description}
+	\item[Neuron's membrane voltage] has values in the range of $-100\rm\,mV <
+		V_{mem} < 300\,mV$.\footnote{Values taken from Jin, Xin, Stephen B
+		Furber, and John V Woods. Efficient modelling of spiking neural
+		networks on a scalable chip multiprocessor. IJCNN. IEEE: 2008:
+		2812-2819. eScholarID:2h387 | DOI:10.1109/IJCNN.2008.4634194}. But
+		we'll choose the representation $A(8,7)$ instead of $A(9,6)$ ranging
+		from $-256 < x < 256 - 7.8125\cdot 10^{-3}$ to double the resolution.
+		Target values have to be multiplied by a factor of $2^7=128$ to fit the
+		representation.
+	\item[Synaptic conductances] have values in the range of $0\rm\,nS < g <
+		100\,nS$. Therefore, the representation $U(7,9)$ ranging from $0 < x <
+		127.998$ fits best. Target values have to be multiplied by $2^9 = 512$
+		to fit the representation.
+	\item[Neuron's time constants] has values in the range of $\rm2\,ms < \tau <
+		100\,ms$ or $0.01\rm\,ms^{-1} < 1/\tau < 0.5\,ms^{-1}$. Therefore the
+		representation $U(1,15)$ ranging from $0 < x < \approx 2$ fits best.
+		Target values have to by multiplied by a factor of $2^{15} = 32768$
+		yields the correct representation.
+	\item[Synaptic time constant] are treated like membrane time constants.
+\end{description}
+
