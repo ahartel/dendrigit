@@ -1,0 +1,167 @@
+import os, sys
+
+from waflib import Logs
+
+top = '../../'
+
+def options(opt):
+	opt.add_option('--with-coverage', action='store_true',
+			default=False,
+			help='Enable coverage data generation during simulation')
+	opt.add_option('--exp', action='store_true', default=False)
+	opt.add_option('--rect', action='store_true', default=False)
+
+def configure(conf):
+	conf.env['PROJECT_ROOT'] = top
+	conf.load('cadence_ius')
+	conf.load('m4')
+
+	conf.env['NCVLOG_OPTIONS'].extend(
+			[
+				'-nocopyright',
+				#'-linedebug',
+				'-define','UNIT_DELAY'
+			]
+	)
+	conf.env['NCVLOG_SV_OPTIONS'].extend(
+			[
+				'-nocopyright',
+				'-linedebug',
+			]
+	)
+	conf.env['NCELAB_OPTIONS'].extend(
+			[
+				'-nocopyright',
+				'-access', '+r',
+				'-errormax', '1',
+				'-warnmax', '2',
+				#'-rnm_tech',
+				#'-timescale', '1ns/10ps',
+				#'-iprof',
+			])
+
+
+	conf.env['NCSIM_OPTIONS'].extend(
+			[
+				'-svseed','42',
+				#'-profile',
+				#'-profoutput', 'profile.txt', 
+				#'-dut_prof', 'dut_prof.txt',
+				#'-memdetail',
+                '-gui',
+			])
+
+	conf.start_msg('Enabling coverage data generation?')
+	if conf.options.with_coverage:
+		conf.end_msg('yes')
+		conf.env['NCELAB_OPTIONS'].extend([
+			'-coverage', 'A',   # enable all coverage instrumentation
+			'-covdut', 'Top_miniasic_0',
+		])
+	else:
+		conf.end_msg('no')
+
+	conf.start_msg('Looking for Synopsys DesginWare IP library')
+	conf.env['DESIGNWARE_PATH'] = conf.root.find_dir(os.environ['SYNOPSYS'] + '/dw/sim_ver').abspath()
+	conf.end_msg(conf.env.DESIGNWARE_PATH)
+
+	conf.start_msg('Compiling sub-implementation for')
+	if conf.options.rect is True and conf.options.exp is True:
+		raise Exception("Can only simulate either exp. synapses or rect. synapses")
+	elif conf.options.rect is True and conf.options.exp is False:
+		conf.env['exp_not_rect'] = False
+		conf.end_msg('rect_syn_on_off')
+	elif conf.options.rect is False and conf.options.exp is True:
+		conf.end_msg('exp_syn')
+		conf.env['exp_not_rect'] = True
+	else:
+		raise Exception("You'll either have to choose the rectangular or the exponential implementation")
+
+
+def build(bld):
+	bld.load('brick_general')
+	bld ( features = 'cds_write_libs' )
+
+	sim_vers = bld.root.find_dir(bld.env['DESIGNWARE_PATH'])
+	bld(
+		name = 'compile_designware',
+		source = sim_vers.ant_glob('*.v'),
+		worklib = 'worklib',
+		features = 'cds_compile_hdl',
+		verilog_search_paths = [ sim_vers ],
+	)
+
+	#bld(
+	#	features = 'm4',
+	#	includes = bld.env.OMNIBUS_M4_INCLUDE,
+	#	source = top +'/hicann-dls/units/top_miniasic_0/source/hdl/rtl/omnibus.sv',
+	#)
+
+	NETWORK_SOURCES = [
+		top +'/source/hdl/rtl/fp_package.sv',
+		top +'/source/hdl/rtl/system_if.sv',
+		top +'/source/hdl/rtl/config_if.sv',
+		top +'/source/hdl/rtl/spike_if.sv',
+		top +'/source/hdl/rtl/spike_out_if.sv',
+		top +'/source/hdl/rtl/common/synapse_to_dendrite_current.sv',
+		top +'/source/hdl/tb/tb_clk_if.sv',
+		top +'/source/hdl/tb/connection_if.sv',
+		top +'/source/hdl/rtl/dendrite_neuron_if.sv',
+		top +'/source/hdl/rtl/synapse_dendrite_if.sv',
+		top +'/source/hdl/rtl/neuron.sv',
+		top +'/source/hdl/rtl/stdp_circuit.sv',
+		top +'/source/hdl/rtl/nn.sv',
+		top +'/source/hdl/rtl/row_global_parameters.sv',
+		top +'/source/hdl/rtl/dendrite.sv',
+		top +'/source/hdl/tb/external_spike_router.sv',
+		top +'/source/hdl/tb/basic_testbench.sv',
+	]
+
+	if bld.env['exp_not_rect'] is True:
+		NETWORK_SOURCES.extend([
+			top +'/source/hdl/rtl/exp_syn/synapse.sv',
+			top +'/source/hdl/tb/exp_syn/params.sv',
+			])
+	else:
+		NETWORK_SOURCES.extend([
+			top +'/source/hdl/rtl/rect_syn_on_off/synapse.sv',
+			top +'/source/hdl/tb/rect_syn_on_off/params.sv',
+			])
+
+	bld (
+		name = 'compile_top',
+		source = bld.convert_string_paths(NETWORK_SOURCES),
+		worklib = 'worklib',
+		features = 'cds_compile_hdl',
+		verilog_search_paths = bld.convert_string_paths(
+			[
+				top + '/source/hdl/tb/',
+				top + '/source/hdl/tb/exp_syn',
+				top + '/source/hdl/tb/rect_syn_on_off',
+				top + '/source/hdl/rtl/',
+				top + '/source/hdl/rtl/exp_syn',
+				top + '/source/hdl/rtl/rect_syn_on_off',
+			]
+		),
+	)
+
+	bld.add_group()
+	bld (
+		toplevel = 'worklib.basic_testbench',
+		features = 'cds_elab',
+		always = True
+	)
+
+def run(bld):
+	bld (
+		features = 'ncsim',
+		toplevel = 'worklib.basic_testbench',
+	)
+
+
+from waflib.Build import BuildContext
+class one(BuildContext):
+	cmd = 'run'
+	fun = 'run'
+
+# vim: noexpandtab:
